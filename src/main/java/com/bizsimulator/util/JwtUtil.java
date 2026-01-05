@@ -2,6 +2,7 @@ package com.bizsimulator.util;
 
 import com.bizsimulator.entity.User;
 import com.bizsimulator.entity.UserProfile;
+import com.bizsimulator.exception.UserNotFoundException;
 import com.bizsimulator.repository.UserProfileRepository;
 import com.bizsimulator.service.UserService;
 import io.jsonwebtoken.Jwts;
@@ -9,6 +10,7 @@ import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -29,8 +31,12 @@ public class JwtUtil {
     private final UserProfileRepository userProfileRepository;
 
     public String generateToken(User user) {
-        log.info("JwtUtil.generateToken.generatingJwtTokenForUser: {}", user.getUsername());
-        UserProfile userProfile = userProfileRepository.findByUserId(user.getId());
+        log.info("JwtUtil.generateToken.generationToken");
+        UserProfile userProfile = userProfileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> {
+                    log.error("JwtUtil.generateToken.error.userDoesNotExist");
+                    return new UserNotFoundException("User not found");
+                });
         return createToken(user, userProfile);
     }
 

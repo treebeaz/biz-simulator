@@ -34,7 +34,7 @@ public class AuthService {
         User user = userService.createUser(request);
         String token = jwtUtil.generateToken(user);
 
-        log.info("AuthService.registration.tokenCreated");
+        log.info("AuthService.registration.tokenCreated.success");
 
         return buildAuthResponse(token, user.getUsername(), user.getRole());
     }
@@ -52,7 +52,7 @@ public class AuthService {
             User user = userService.findByUsername(userDetails.getUsername());
             String token = jwtUtil.generateToken(user);
 
-            log.info("AuthService.login.success.forUser: {}", user.getUsername());
+            log.info("AuthService.login.success");
 
             return buildAuthResponse(token, user.getUsername(), user.getRole());
 
