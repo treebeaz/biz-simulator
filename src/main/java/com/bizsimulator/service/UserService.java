@@ -3,6 +3,7 @@ package com.bizsimulator.service;
 import com.bizsimulator.dto.auth.RegistrationRequestDto;
 import com.bizsimulator.dto.user.UserRequestDto;
 import com.bizsimulator.dto.user.UserResponseDto;
+import com.bizsimulator.dto.user.UserUpdateAccountRequestDto;
 import com.bizsimulator.entity.User;
 import com.bizsimulator.entity.UserProfile;
 import com.bizsimulator.exception.*;
@@ -19,9 +20,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.Principal;
 import java.util.Optional;
-import java.util.UUID;
+
 
 @Service
 @RequiredArgsConstructor
@@ -105,17 +105,37 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional
-    public UserResponseDto editProfile(UserRequestDto userRequestDto, Authentication authentication) {
-        // TODO: добавить изменение имени пользователя, почты и пароля
+    public void updateAccount(UserUpdateAccountRequestDto updateAccountDto, Authentication authentication) {
         User user = getCurrentAuthenticationUser(authentication);
 
+        updateEmail(updateAccountDto.getEmail(), user);
+        updatePassword(updateAccountDto.getPassword(), user);
 
+        userRepository.save(user);
     }
 
-    private void validateUniqueFields(UserRequestDto userRequestDto, User user) {
-        if(userRequestDto.getUsername() != null && !userRequestDto.getUsername().equals(user.getUsername())) {
-            log.error("UserService.validateUniqueFields.error.failedToChangedUsername");
-            throw new DuplicateUsernameException("Username already exists");
+    private void updateEmail(String newEmail, User user) {
+        if (newEmail == null || newEmail.equals(user.getEmail())) {
+            return;
         }
+
+        if (userRepository.existsByEmail(newEmail)) {
+            log.info("UserService.updateAccount.error.EmailAlreadyExists");
+            throw new UpdateUserAccountException("User with this email already exists");
+        }
+
+        log.info("UserService.updateEmail.success");
+        user.setEmail(newEmail);
     }
+
+    private void updatePassword(String newPassword, User user) {
+        if (newPassword == null || newPassword.isBlank()) {
+            return;
+        }
+
+        log.info("UserService.updatePassword.success");
+        user.setPassword(passwordEncoder.encode(newPassword));
+    }
+
+
 }
