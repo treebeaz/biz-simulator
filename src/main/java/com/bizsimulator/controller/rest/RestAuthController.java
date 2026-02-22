@@ -1,4 +1,4 @@
-package com.bizsimulator.controller;
+package com.bizsimulator.controller.rest;
 
 import com.bizsimulator.dto.auth.AuthRequestDto;
 import com.bizsimulator.dto.auth.AuthResponseDto;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/auth")
-public class AuthController {
+public class RestAuthController {
 
     private final AuthService authService;
 

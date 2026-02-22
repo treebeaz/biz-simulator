@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="~{fragments/head :: head(${pageTitle})}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактирование профиля</title>
+    <style>
+        .form-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 4px solid #007bff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .form-section h5 {
+            color: #2c3e50;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 12px;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+        .form-section.security {
+            border-left-color: #dc3545;
+        }
+        .form-section.email {
+            border-left-color: #28a745;
+        }
+        .form-section.personal {
+            border-left-color: #007bff;
+        }
+        .password-strength {
+            height: 6px;
+            margin-top: 8px;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+            width: 0%;
+        }
+        .password-weak {
+            background-color: #dc3545;
+            width: 25%;
+        }
+        .password-medium {
+            background-color: #ffc107;
+            width: 50%;
+        }
+        .password-strong {
+            background-color: #28a745;
+            width: 100%;
+        }
+        .required-field::after {
+            content: " *";
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .input-icon {
+            position: relative;
+        }
+        .input-icon i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+        .input-icon input {
+            padding-left: 45px;
+        }
+        .help-text {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        .btn-action {
+            min-width: 120px;
+        }
+    </style>
+</head>
+
+<body>
+<!-- Навигация -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container">
+        <a class="navbar-brand" href="/">Бизнес-симулятор</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Главная</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/profile">Профиль</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/profile/edit">Редактировать</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-danger" href="#" onclick="logout()">Выйти</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <!-- Хлебные крошки -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Главная</a></li>
+            <li class="breadcrumb-item"><a href="/profile">Профиль</a></li>
+            <li class="breadcrumb-item active">Редактирование</li>
+        </ol>
+    </nav>
+
+    <!-- Заголовок -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="mb-2">Редактирование профиля</h1>
+            <p class="text-muted mb-0">Обновите свои личные данные и настройки безопасности</p>
+        </div>
+        <a href="/profile" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Назад
+        </a>
+    </div>
+
+    <!-- Сообщения -->
+    <div id="message" class="alert alert-dismissible fade show d-none" role="alert">
+        <span id="messageText"></span>
+        <button type="button" class="btn-close" onclick="hideMessage()"></button>
+    </div>
+
+    <!-- Форма редактирования -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <!-- Личная информация -->
+            <div class="form-section personal">
+                <h5><i class="bi bi-person-circle me-2"></i>Личная информация</h5>
+
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                        <label for="firstName" class="form-label required-field">Имя</label>
+                        <div class="input-icon">
+                            <i class="bi bi-person"></i>
+                            <input type="text" id="firstName" class="form-control"
+                                   placeholder="Введите ваше имя">
+                        </div>
+                        <div class="help-text">Начинается с заглавной буквы</div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="lastName" class="form-label required-field">Фамилия</label>
+                        <div class="input-icon">
+                            <i class="bi bi-person"></i>
+                            <input type="text" id="lastName" class="form-control"
+                                   placeholder="Введите вашу фамилию">
+                        </div>
+                        <div class="help-text">Начинается с заглавной буквы</div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Логин</label>
+                        <div class="input-icon">
+                            <i class="bi bi-at"></i>
+                            <input type="text" class="form-control" id="usernameDisplay" readonly>
+                        </div>
+                        <div class="help-text">Логин нельзя изменить</div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Роль в системе</label>
+                        <div class="input-icon">
+                            <i class="bi bi-award"></i>
+                            <input type="text" class="form-control" id="roleDisplay" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Смена email -->
+            <div class="form-section email">
+                <h5><i class="bi bi-envelope me-2"></i>Электронная почта</h5>
+
+                <div class="mb-4">
+                    <label for="currentEmail" class="form-label">Текущий email</label>
+                    <div class="input-icon">
+                        <i class="bi bi-envelope"></i>
+                        <input type="email" id="currentEmail" class="form-control" readonly>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="newEmail" class="form-label">Новый email</label>
+                    <div class="input-icon">
+                        <i class="bi bi-envelope-plus"></i>
+                        <input type="email" id="newEmail" class="form-control"
+                               placeholder="Введите новый email">
+                    </div>
+                    <div class="help-text">
+                        Оставьте пустым, если не хотите менять email.
+                        После изменения потребуется подтверждение по новому адресу.
+                    </div>
+                </div>
+
+                <div class="alert alert-info border-0 bg-light">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <small class="text-muted">
+                        Email используется для восстановления пароля и важных уведомлений системы.
+                    </small>
+                </div>
+            </div>
+
+            <!-- Смена пароля -->
+            <div class="form-section security">
+                <h5><i class="bi bi-shield-lock me-2"></i>Безопасность</h5>
+
+                <div class="mb-4">
+                    <label for="currentPassword" class="form-label required-field">Текущий пароль</label>
+                    <div class="input-icon">
+                        <i class="bi bi-lock"></i>
+                        <input type="password" id="currentPassword" class="form-control"
+                               placeholder="Введите текущий пароль" required>
+                    </div>
+                    <div class="help-text">Требуется для подтверждения любых изменений</div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="newPassword" class="form-label">Новый пароль</label>
+                    <div class="input-icon">
+                        <i class="bi bi-key"></i>
+                        <input type="password" id="newPassword" class="form-control"
+                               placeholder="Минимум 7 символов">
+                    </div>
+                    <div class="help-text">Оставьте пустым, если не хотите менять пароль</div>
+                    <div class="password-strength mt-2" id="passwordStrength"></div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="confirmPassword" class="form-label">Подтвердите новый пароль</label>
+                    <div class="input-icon">
+                        <i class="bi bi-key-fill"></i>
+                        <input type="password" id="confirmPassword" class="form-control"
+                               placeholder="Повторите новый пароль">
+                    </div>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="showPasswords">
+                    <label class="form-check-label" for="showPasswords">
+                        <i class="bi bi-eye me-1"></i> Показать пароли
+                    </label>
+                </div>
+
+                <div class="alert alert-warning border-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <small>
+                        После смены пароля вы будете автоматически выйдены из системы.
+                    </small>
+                </div>
+            </div>
+
+            <!-- Кнопки действий -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <button type="button" class="btn btn-outline-danger btn-action" onclick="cancelEdit()">
+                                <i class="bi bi-x-lg me-1"></i> Отмена
+                            </button>
+                        </div>
+
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary btn-action me-2" onclick="resetForm()">
+                                <i class="bi bi-arrow-clockwise me-1"></i> Сбросить
+                            </button>
+                            <button type="button" class="btn btn-primary btn-action" onclick="saveChanges()" id="saveButton">
+                                <i class="bi bi-check-lg me-1"></i> Сохранить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Информационный блок -->
+            <div class="alert alert-light border mt-4">
+                <h6 class="mb-2"><i class="bi bi-lightbulb text-warning me-2"></i>Полезно знать</h6>
+                <ul class="mb-0 small text-muted">
+                    <li>Все изменения сохраняются моментально</li>
+                    <li>Для безопасности требуется подтверждение текущим паролем</li>
+                    <li>Рекомендуем использовать надежные пароли</li>
+                    <li>При возникновении проблем обратитесь к администратору</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+<script>
+    let originalData = {};
+    let isLoading = false;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Проверяем авторизацию
+        if (!checkAuth()) {
+            return;
+        }
+
+        // Загружаем данные
+        loadCurrentProfile();
+
+        // Настройка событий
+        setupEventListeners();
+    });
+
+    function checkAuth() {
+        const token = localStorage.getItem('jwtToken');
+        if (!token) {
+            window.location.href = '/auth/login';
+            return false;
+        }
+        return true;
+    }
+
+    function getAuthHeaders() {
+        const token = localStorage.getItem('jwtToken');
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
+    }
+
+    function setupEventListeners() {
+        // Показать/скрыть пароли
+        document.getElementById('showPasswords').addEventListener('change', function(e) {
+            const type = e.target.checked ? 'text' : 'password';
+            document.getElementById('currentPassword').type = type;
+            document.getElementById('newPassword').type = type;
+            document.getElementById('confirmPassword').type = type;
+        });
+
+        // Проверка силы пароля
+        document.getElementById('newPassword').addEventListener('input', checkPasswordStrength);
+    }
+
+    async function loadCurrentProfile() {
+        try {
+            showLoading(true);
+
+            const response = await fetch('/api/user/profile', {
+                headers: getAuthHeaders()
+            });
+
+            if (!response.ok) {
+                throw new Error(`Ошибка загрузки: ${response.status}`);
+            }
+
+            const profileData = await response.json();
+
+            // Сохраняем оригинальные данные
+            originalData = {
+                firstName: profileData.firstName || '',
+                lastName: profileData.lastName || '',
+                username: profileData.username || '',
+                email: profileData.email || ''
+            };
+
+            // Заполняем поля
+            document.getElementById('firstName').value = originalData.firstName;
+            document.getElementById('lastName').value = originalData.lastName;
+            document.getElementById('usernameDisplay').value = originalData.username;
+            document.getElementById('currentEmail').value = originalData.email || 'Не указан';
+
+            // Роль из localStorage
+            const role = localStorage.getItem('userRole');
+            document.getElementById('roleDisplay').value =
+                role === 'STUDENT' ? 'Студент' :
+                    role === 'TEACHER' ? 'Преподаватель' : 'Пользователь';
+
+        } catch (error) {
+            console.error('Ошибка загрузки:', error);
+            showMessage('Не удалось загрузить данные профиля', 'danger');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    function checkPasswordStrength() {
+        const password = document.getElementById('newPassword').value;
+        const strengthBar = document.getElementById('passwordStrength');
+
+        if (!password) {
+            strengthBar.className = 'password-strength';
+            strengthBar.style.width = '0%';
+            return;
+        }
+
+        let strength = 0;
+
+        // Длина
+        if (password.length >= 7) strength += 1;
+        if (password.length >= 10) strength += 1;
+
+        // Разнообразие символов
+        if (/[a-z]/.test(password)) strength += 1;
+        if (/[A-Z]/.test(password)) strength += 1;
+        if (/[0-9]/.test(password)) strength += 1;
+        if (/[^a-zA-Z0-9]/.test(password)) strength += 1;
+
+        // Определяем уровень
+        if (strength <= 2) {
+            strengthBar.className = 'password-strength password-weak';
+        } else if (strength <= 4) {
+            strengthBar.className = 'password-strength password-medium';
+        } else {
+            strengthBar.className = 'password-strength password-strong';
+        }
+    }
+
+    async function saveChanges() {
+        if (isLoading) return;
+
+        try {
+            hideMessage();
+
+            // Получаем данные
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newEmail = document.getElementById('newEmail').value.trim();
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // Валидация
+            if (!firstName || !lastName) {
+                showMessage('Имя и фамилия обязательны', 'danger');
+                return;
+            }
+
+            if (!currentPassword) {
+                showMessage('Текущий пароль обязателен', 'danger');
+                return;
+            }
+
+            // Проверка имени/фамилии
+            if (firstName && !/^[A-ZА-Я]/.test(firstName)) {
+                showMessage('Имя должно начинаться с заглавной буквы', 'danger');
+                return;
+            }
+
+            if (lastName && !/^[A-ZА-Я]/.test(lastName)) {
+                showMessage('Фамилия должна начинаться с заглавной буквы', 'danger');
+                return;
+            }
+
+            // Проверка пароля
+            if (newPassword && newPassword.length < 7) {
+                showMessage('Новый пароль должен быть не менее 7 символов', 'danger');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showMessage('Пароли не совпадают', 'danger');
+                return;
+            }
+
+            // Проверка email
+            if (newEmail && !isValidEmail(newEmail)) {
+                showMessage('Введите корректный email', 'danger');
+                return;
+            }
+
+            // Подготавливаем данные для отправки
+            const updateData = {};
+
+            // Email (только если изменился)
+            if (newEmail && newEmail !== originalData.email) {
+                updateData.email = newEmail;
+            }
+
+            // Пароль (только если указан)
+            if (newPassword) {
+                updateData.password = newPassword;
+            }
+
+            // Проверяем, есть ли изменения
+            const hasChanges = Object.keys(updateData).length > 0 ||
+                firstName !== originalData.firstName ||
+                lastName !== originalData.lastName;
+
+            if (!hasChanges) {
+                showMessage('Нет изменений для сохранения', 'info');
+                return;
+            }
+
+            // Показываем индикатор загрузки
+            showLoading(true);
+
+            // Отправляем запрос
+            const response = await fetch('/api/user/update-account', {
+                method: 'PATCH',
+                headers: getAuthHeaders(),
+                body: JSON.stringify(updateData)
+            });
+
+            if (response.status === 204) {
+                // Успех
+                if (updateData.password) {
+                    showMessage('Пароль изменен! Войдите заново.', 'success');
+                    setTimeout(() => logout(), 2000);
+                } else {
+                    showMessage('Изменения успешно сохранены', 'success');
+
+                    // Обновляем данные в localStorage
+                    if (updateData.email) {
+                        localStorage.setItem('userEmail', updateData.email);
+                        originalData.email = updateData.email;
+                    }
+
+                    originalData.firstName = firstName;
+                    originalData.lastName = lastName;
+
+                    setTimeout(() => {
+                        window.location.href = '/profile';
+                    }, 1500);
+                }
+
+            } else if (response.status === 400) {
+                const errorData = await response.json();
+                showMessage(errorData.message || 'Ошибка валидации', 'danger');
+            } else {
+                throw new Error('Ошибка сервера');
+            }
+
+        } catch (error) {
+            console.error('Ошибка сохранения:', error);
+            showMessage(error.message || 'Произошла ошибка', 'danger');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    function isValidEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+
+    function cancelEdit() {
+        if (confirm('Отменить все изменения?')) {
+            window.location.href = '/profile';
+        }
+    }
+
+    function resetForm() {
+        if (confirm('Сбросить все изменения к исходным значениям?')) {
+            document.getElementById('firstName').value = originalData.firstName || '';
+            document.getElementById('lastName').value = originalData.lastName || '';
+            document.getElementById('newEmail').value = '';
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            document.getElementById('passwordStrength').className = 'password-strength';
+            document.getElementById('passwordStrength').style.width = '0%';
+            hideMessage();
+        }
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = '/auth/login';
+    }
+
+    function showMessage(text, type) {
+        const messageDiv = document.getElementById('message');
+        const messageText = document.getElementById('messageText');
+
+        messageText.textContent = text;
+        messageDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        messageDiv.classList.remove('d-none');
+
+        setTimeout(hideMessage, 5000);
+    }
+
+    function hideMessage() {
+        document.getElementById('message').classList.add('d-none');
+    }
+
+    function showLoading(loading) {
+        isLoading = loading;
+        const saveButton = document.getElementById('saveButton');
+        const inputs = document.querySelectorAll('input:not([readonly])');
+
+        if (loading) {
+            saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Сохранение...';
+            saveButton.disabled = true;
+            inputs.forEach(input => input.disabled = true);
+        } else {
+            saveButton.innerHTML = '<i class="bi bi-check-lg me-1"></i> Сохранить';
+            saveButton.disabled = false;
+            inputs.forEach(input => input.disabled = false);
+        }
+    }
+</script>
+</body>
+</html>

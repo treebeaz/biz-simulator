@@ -1,11 +1,9 @@
-package com.bizsimulator.controller;
+package com.bizsimulator.controller.rest;
 
-import com.bizsimulator.dto.user.UserRequestDto;
 import com.bizsimulator.dto.user.UserResponseDto;
 import com.bizsimulator.dto.user.UserUpdateAccountRequestDto;
 import com.bizsimulator.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -14,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/user")
-public class UserController {
+public class RestUserController {
 
     private final UserService userService;
 

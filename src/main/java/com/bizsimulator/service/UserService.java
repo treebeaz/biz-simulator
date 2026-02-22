@@ -1,7 +1,6 @@
 package com.bizsimulator.service;
 
 import com.bizsimulator.dto.auth.RegistrationRequestDto;
-import com.bizsimulator.dto.user.UserRequestDto;
 import com.bizsimulator.dto.user.UserResponseDto;
 import com.bizsimulator.dto.user.UserUpdateAccountRequestDto;
 import com.bizsimulator.entity.User;
@@ -101,6 +100,7 @@ public class UserService implements UserDetailsService {
                 .firstName(profile.getFirstName())
                 .lastName(profile.getLastName())
                 .username(user.getUsername())
+                .email(user.getEmail())
                 .build();
     }
 
