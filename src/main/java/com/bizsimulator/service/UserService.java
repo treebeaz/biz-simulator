@@ -1,7 +1,6 @@
 package com.bizsimulator.service;
 
 import com.bizsimulator.dto.auth.RegistrationRequestDto;
-import com.bizsimulator.dto.user.UserRequestDto;
 import com.bizsimulator.dto.user.UserResponseDto;
 import com.bizsimulator.dto.user.UserUpdateAccountRequestDto;
 import com.bizsimulator.entity.User;
@@ -79,13 +78,13 @@ public class UserService implements UserDetailsService {
         return buildResponse(user, userProfile);
     }
 
-    private User getCurrentAuthenticationUser(Authentication authentication) {
+    protected User getCurrentAuthenticationUser(Authentication authentication) {
         if (!(authentication.getPrincipal() instanceof UserDetails userDetails)) {
-            log.error("UserService.extractUserFromAuthentication.error.InvalidPrincipalTypeInAuthentication");
+            log.error("UserService.getCurrentAuthenticationUser.error.InvalidPrincipalTypeInAuthentication");
             throw new InvalidAuthenticationException("Authentication type does not match with User");
         }
 
-        return findByUsername(userDetails.getUsername());
+        return this.findByUsername(userDetails.getUsername());
     }
 
     public UserProfile findUserProfileByEmailOrUsername(User user) {
@@ -101,6 +100,7 @@ public class UserService implements UserDetailsService {
                 .firstName(profile.getFirstName())
                 .lastName(profile.getLastName())
                 .username(user.getUsername())
+                .email(user.getEmail())
                 .build();
     }
 

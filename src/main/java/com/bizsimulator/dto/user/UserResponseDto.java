@@ -9,4 +9,5 @@ public class UserResponseDto {
     String firstName;
     String lastName;
     String username;
+    String email;
 }

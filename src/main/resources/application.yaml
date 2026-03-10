@@ -11,7 +11,9 @@ spring:
   liquibase:
     change-log: classpath:/db/changelog/db.changelog-master.yaml
     enabled: true
-
+  web:
+    resources:
+      static-locations: classpath:/resources/, classpath:/static/
 token:
   jwt:
     secret: "jbQxmExX43va4BhnHLcPvnJwQAZAVKWp"
