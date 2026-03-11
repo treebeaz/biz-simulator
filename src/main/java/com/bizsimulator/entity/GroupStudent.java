@@ -19,11 +19,11 @@ public class GroupStudent {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id", nullable = false, unique = true)
+    @JoinColumn(name = "group_id", nullable = false)
     private Group group;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "student_id", nullable = false, unique = true)
+    @JoinColumn(name = "student_id", nullable = false)
     private User student;
 
     @Column(name = "joined_at")

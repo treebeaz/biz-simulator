@@ -27,3 +27,12 @@ CREATE TABLE group_students (
 --changeset karim:3
 ALTER TABLE groups RENAME COLUMN created_id TO created_at;
 ALTER TABLE groups RENAME COLUMN updated_id TO updated_at;
+
+--changeset karim:4
+ALTER TABLE group_students
+    DROP CONSTRAINT IF EXISTS group_students_group_id_key,
+    DROP CONSTRAINT IF EXISTS group_students_student_id_key;
+
+ALTER TABLE group_students
+    ADD CONSTRAINT uk_group_student_unique
+        UNIQUE (group_id, student_id);

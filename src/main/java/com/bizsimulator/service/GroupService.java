@@ -72,6 +72,4 @@ public class GroupService {
         groupStudentRepository.save(groupStudent);
         log.info("GroupService.joinGroupByCode: Student successfully joined group");
     }
-
-
 }

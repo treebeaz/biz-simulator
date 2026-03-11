@@ -3,9 +3,9 @@ spring:
     name: bizsimulator
 
   datasource:
-    url: jdbc:postgresql://localhost:5437/postgres
-    username: postgres
-    password: 123
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5437/postgres}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:123}
     driver-class-name: org.postgresql.Driver
 
   liquibase:
@@ -16,8 +16,8 @@ spring:
       static-locations: classpath:/resources/, classpath:/static/
 token:
   jwt:
-    secret: "jbQxmExX43va4BhnHLcPvnJwQAZAVKWp"
-    expiration: 86400000
+    secret: ${TOKEN_JWT_SECRET:"jbQxmExX43va4BhnHLcPvnJwQAZAVKWp"}
+    expiration: ${TOKEN_EXPIRATION:86400000}
 
 server:
   port: 8081

@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: bizsimulator-postgres
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
+    ports:
+      - "5437:5432"
+    volumes:
+      - bizsimulator_pg_data:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bizsimulator-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 123
+      TOKEN_JWT_SECRET: jbQxmExX43va4BhnHLcPvnJwQAZAVKWp
+      TOKEN_EXPIRATION: 86400000
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
+
+volumes:
+  bizsimulator_pg_data:

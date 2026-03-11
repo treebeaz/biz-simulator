@@ -43,8 +43,8 @@ public class RestUserController {
 
     @PostMapping("/join-group")
     @PreAuthorize("hasRole('STUDENT')")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void joinGroup(@RequestBody JoinGroupRequestDto dto) {
+    public ResponseEntity<Void> joinGroup(@RequestBody JoinGroupRequestDto dto) {
         groupService.joinGroupByCode(dto, SecurityContextHolder.getContext().getAuthentication());
+        return ResponseEntity.noContent().build();
     }
 }
