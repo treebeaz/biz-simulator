@@ -1,5 +1,6 @@
 package com.bizsimulator.entity;
 
+import com.bizsimulator.entity.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 

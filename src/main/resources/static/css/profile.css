@@ -1,0 +1,47 @@
+.profile-page {
+    background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 40%, #ffffff 100%);
+    min-height: 100vh;
+}
+
+.profile-page .card {
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.profile-page .container .card .card-header {
+    background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+    color: #fff;
+    border-bottom: none;
+}
+
+.profile-page .container .card .card-header .mb-0 {
+    color: #fff;
+}
+
+.profile-page .container .card .card-body {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(6px);
+}
+
+.profile-icon {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    color: white;
+    font-size: 48px;
+}
+
+.info-row {
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+

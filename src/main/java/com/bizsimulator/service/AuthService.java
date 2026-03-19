@@ -3,7 +3,7 @@ package com.bizsimulator.service;
 import com.bizsimulator.dto.auth.AuthRequestDto;
 import com.bizsimulator.dto.auth.AuthResponseDto;
 import com.bizsimulator.dto.auth.RegistrationRequestDto;
-import com.bizsimulator.entity.Role;
+import com.bizsimulator.entity.enums.Role;
 import com.bizsimulator.entity.User;
 import com.bizsimulator.exception.InvalidCredentialsException;
 import com.bizsimulator.exception.UserAlreadyExistsException;

@@ -16,12 +16,14 @@ public class ProfileController {
             model.addAttribute("username", authentication.getName());
         }
         model.addAttribute("pageTitle", "Мой профиль");
+        model.addAttribute("pageCss", "/css/profile.css");
         return "profile/view";
     }
 
     @GetMapping("/edit")
     public String editProfile(Model model) {
         model.addAttribute("pageTitle", "Изменение профиля");
+        model.addAttribute("pageCss", "/css/profile-edit.css");
         return "profile/edit";
     }
 }

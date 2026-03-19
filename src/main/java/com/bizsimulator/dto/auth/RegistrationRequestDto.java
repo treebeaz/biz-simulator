@@ -1,6 +1,6 @@
 package com.bizsimulator.dto.auth;
 
-import com.bizsimulator.entity.Role;
+import com.bizsimulator.entity.enums.Role;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Builder;

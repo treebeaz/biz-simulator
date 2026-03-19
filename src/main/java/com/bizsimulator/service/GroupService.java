@@ -1,13 +1,13 @@
 package com.bizsimulator.service;
 
-import com.bizsimulator.dto.group.GroupRequestDto;
-import com.bizsimulator.dto.group.GroupResponseDto;
-import com.bizsimulator.dto.group.JoinGroupRequestDto;
+import com.bizsimulator.dto.group.*;
 import com.bizsimulator.entity.Group;
 import com.bizsimulator.entity.GroupStudent;
 import com.bizsimulator.entity.User;
+import com.bizsimulator.entity.UserProfile;
 import com.bizsimulator.exception.GroupNotFoundException;
 import com.bizsimulator.exception.StudentAlreadyInGroupException;
+import com.bizsimulator.exception.StudentNotFoundException;
 import com.bizsimulator.repository.GroupRepository;
 import com.bizsimulator.repository.GroupStudentRepository;
 import com.bizsimulator.util.JoinCodeGenerator;
@@ -16,6 +16,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -28,7 +32,6 @@ public class GroupService {
     private final UserService userService;
 
     @Transactional
-//    @PreAuthorize("hasRole('TEACHER')")
     public GroupResponseDto createGroup(GroupRequestDto groupRequestDto, Authentication authentication) {
         String joinCode = joinCodeGenerator.generate();
         Group group = Group.builder()
@@ -72,4 +75,70 @@ public class GroupService {
         groupStudentRepository.save(groupStudent);
         log.info("GroupService.joinGroupByCode: Student successfully joined group");
     }
+
+    public GroupResponseDto getJoinGroupCode(UUID groupId, Authentication authentication) {
+        User teacher =  userService.getCurrentAuthenticationUser(authentication);
+        Group group = groupRepository.findGroupByIdAndTeacherId(groupId, teacher.getId())
+                .orElseThrow(() -> {
+                    log.error("GroupService.getJoinGroupCode: Group not found by id");
+                    return new GroupNotFoundException("Group not found");
+                });
+
+        return buildGroupResponse(group.getName(), group.getJoinCode());
+    }
+
+    public StudentGroupResponseDto getStudentGroupInfo(Authentication authentication) throws StudentNotFoundException {
+        User student = userService.getCurrentAuthenticationUser(authentication);
+        GroupStudent groupStudent = groupStudentRepository.findFirstByStudentId(student.getId())
+                .orElseThrow(() -> {
+                    log.warn("GroupService.getStudentGroupInfo: Student not found");
+                    return new StudentNotFoundException("Student not found");
+                });
+
+        Group group = groupStudent.getGroup();
+        User teacher = group.getTeacher();
+
+        return StudentGroupResponseDto.builder()
+                .groupName(group.getName())
+                .teacherName(teacher.getUserProfile().getFirstName() + teacher.getUserProfile().getLastName())
+                .teacherEmail(teacher.getEmail())
+                .build();
+    }
+
+    public List<TeacherGroupWithStudentDto> getTeacherGroupsWithStudents(Authentication authentication) {
+        User teacher = userService.getCurrentAuthenticationUser(authentication);
+
+        List<Group> groups = groupRepository.findAllByTeacherId(teacher.getId());
+
+        return groups.stream()
+                .map(group -> {
+                    List<GroupStudent> groupStudents = groupStudentRepository.findAllByGroupId(group.getId());
+                    List<GroupStudentDto> students = getListOfStudents(groupStudents);
+
+                    return TeacherGroupWithStudentDto.builder()
+                            .groupId(String.valueOf(group.getId()))
+                            .groupName(group.getName())
+                            .students(students)
+                            .build();
+                })
+                .toList();
+    }
+
+    private List<GroupStudentDto> getListOfStudents(List<GroupStudent> groupStudents) {
+        return groupStudents.stream()
+                .map(groupStudent -> {
+                    User student = groupStudent.getStudent();
+                    UserProfile studentProfile = student.getUserProfile();
+
+                    return GroupStudentDto.builder()
+                            .studentId(student.getId().toString())
+                            .username(student.getUsername())
+                            .nameStudent(studentProfile.getFirstName() + " " + studentProfile.getLastName())
+                            .emailStudent(student.getEmail())
+                            .build();
+                })
+                .toList();
+    }
+
+
 }

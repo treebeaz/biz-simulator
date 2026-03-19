@@ -56,7 +56,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Проверка логина (только буквы и цифры)
         if (!/^[a-zA-Z0-9]+$/.test(formData.username)) {
             showError('Логин должен содержать только буквы и цифры');
             return;
@@ -68,7 +67,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-            // Отправляем запрос на регистрацию
             const response = await fetch('/api/auth/registration', {
                 method: 'POST',
                 headers: {
@@ -80,19 +78,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
 
             if (response.ok) {
-                // Регистрация успешна
                 showSuccess('Регистрация успешна! Вы будете перенаправлены...');
 
-                // Сохраняем токен
                 saveToken(data.token, data.username, data.role);
 
-                // Редирект через 2 секунды
                 setTimeout(() => {
                     window.location.href = '/';
                 }, 2000);
 
             } else {
-                // Ошибка регистрации
                 showError(data.message || 'Ошибка регистрации');
             }
 

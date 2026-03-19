@@ -1,0 +1,84 @@
+.form-section {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 30px;
+    border-left: 4px solid #007bff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.form-section h5 {
+    color: #2c3e50;
+    border-bottom: 2px solid #dee2e6;
+    padding-bottom: 12px;
+    margin-bottom: 25px;
+    font-weight: 600;
+}
+
+.form-section.security {
+    border-left-color: #dc3545;
+}
+
+.form-section.email {
+    border-left-color: #28a745;
+}
+
+.form-section.personal {
+    border-left-color: #007bff;
+}
+
+.password-strength {
+    height: 6px;
+    margin-top: 8px;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+    width: 0%;
+}
+
+.password-weak {
+    background-color: #dc3545;
+    width: 25%;
+}
+
+.password-medium {
+    background-color: #ffc107;
+    width: 50%;
+}
+
+.password-strong {
+    background-color: #28a745;
+    width: 100%;
+}
+
+.required-field::after {
+    content: " *";
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.input-icon {
+    position: relative;
+}
+
+.input-icon i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+}
+
+.input-icon input {
+    padding-left: 45px;
+}
+
+.help-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+.btn-action {
+    min-width: 120px;
+}
+

@@ -1,6 +1,6 @@
 package com.bizsimulator.dto.auth;
 
-import com.bizsimulator.entity.Role;
+import com.bizsimulator.entity.enums.Role;
 import lombok.Builder;
 import lombok.Value;
 

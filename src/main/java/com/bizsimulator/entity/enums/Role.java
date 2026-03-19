@@ -1,4 +1,4 @@
-package com.bizsimulator.entity;
+package com.bizsimulator.entity.enums;
 
 public enum Role {
     STUDENT, TEACHER, ADMIN

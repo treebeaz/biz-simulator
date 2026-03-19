@@ -1,26 +1,22 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ru">
-<head th:replace="fragments/head :: head(${pageTitle})">
+<head th:replace="~{fragments/head :: head(${pageTitle})}">
     <title>Бизнес-симулятор</title>
 </head>
 
 <body>
 
-<!-- Навигация -->
 <nav class="navbar navbar-expand-lg navbar-light bg-light" id="mainNavbar">
     <div class="container">
         <a class="navbar-brand" href="/">Biz-Sim</a>
 
-        <!-- Меню -->
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav ms-auto" id="navbarMenu">
-                <!-- Будет заполнено через JavaScript -->
             </ul>
         </div>
     </div>
 </nav>
 
-<!-- Герой-секция -->
 <section class="hero-section bg-primary text-white py-5">
     <div class="container">
         <div class="row align-items-center">
@@ -31,19 +27,94 @@
                     Студенты принимают решения, преподаватели контролируют процесс.
                 </p>
                 <div class="mt-4" id="heroButtons">
-                    <!-- Кнопки будут обновлены через JS -->
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Контейнер для контента в зависимости от авторизации -->
 <div id="mainContent">
-    <!-- Будет заполнено через JavaScript -->
+    <section id="howItWorks" class="py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-4">Как это работает</h2>
+            <div class="row text-center">
+                <div class="col-md-3 mb-4">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                         style="width: 72px; height: 72px;">
+                        <span class="h5 mb-0">1</span>
+                    </div>
+                    <h5 class="mt-3">Вход</h5>
+                    <p class="text-muted mb-0">Создайте аккаунт и войдите в систему</p>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                         style="width: 72px; height: 72px;">
+                        <span class="h5 mb-0">2</span>
+                    </div>
+                    <h5 class="mt-3">Группа</h5>
+                    <p class="text-muted mb-0">Студент вводит код, преподаватель создаёт группу</p>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                         style="width: 72px; height: 72px;">
+                        <span class="h5 mb-0">3</span>
+                    </div>
+                    <h5 class="mt-3">Работа</h5>
+                    <p class="text-muted mb-0">Принимайте решения и отслеживайте результаты</p>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
+                         style="width: 72px; height: 72px;">
+                        <span class="h5 mb-0">4</span>
+                    </div>
+                    <h5 class="mt-3">Оценка</h5>
+                    <p class="text-muted mb-0">Преподаватель видит группы и студентов</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="forWhom" class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-4">Для кого</h2>
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h4 class="card-title">Студентам</h4>
+                            <ul class="mb-0">
+                                <li>Вступить в группу по коду</li>
+                                <li>Работать в личном кабинете</li>
+                                <li>Анализировать результаты</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h4 class="card-title">Преподавателям</h4>
+                            <ul class="mb-0">
+                                <li>Создавать группы студентов</li>
+                                <li>Смотреть списки студентов по группам</li>
+                                <li>Управлять учебным процессом</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="cta" class="py-5 bg-light">
+        <div class="container text-center">
+            <h2 class="mb-3">Готовы начать?</h2>
+            <p class="text-muted mb-4">Войдите в систему или перейдите в личный кабинет</p>
+            <div id="ctaButtons" class="d-flex justify-content-center gap-2 flex-wrap"></div>
+        </div>
+    </section>
 </div>
 
-<!-- Подвал -->
 <footer class="bg-dark text-white py-4">
     <div class="container">
         <div class="row">
@@ -58,349 +129,8 @@
     </div>
 </footer>
 
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Наш JavaScript -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const token = localStorage.getItem('jwtToken');
-        const username = localStorage.getItem('username');
-        const userRole = localStorage.getItem('userRole');
-
-        updateNavigation(token, username, userRole);
-        updateContent(token, username, userRole);
-    });
-
-    function updateNavigation(token, username, userRole) {
-        const navbarMenu = document.getElementById('navbarMenu');
-
-        if (token && username) {
-            // Авторизованный пользователь
-            navbarMenu.innerHTML = `
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" role="button"
-                   data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-person-circle"></i> ${username}
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                        <a class="dropdown-item" href="/profile">
-                            <i class="bi bi-person"></i> Личный кабинет
-                        </a>
-                    </li>
-                    ${userRole === 'TEACHER' ? `
-                    <li>
-                        <a class="dropdown-item" href="/teacher/dashboard">
-                            <i class="bi bi-speedometer2"></i> Панель преподавателя
-                        </a>
-                    </li>
-                    ` : ''}
-                    ${userRole === 'STUDENT' ? `
-                    <li>
-                        <a class="dropdown-item" href="/student/dashboard">
-                            <i class="bi bi-building"></i> Моя компания
-                        </a>
-                    </li>
-                    ` : ''}
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item text-danger" href="#" onclick="logout()">
-                            <i class="bi bi-box-arrow-right"></i> Выйти
-                        </a>
-                    </li>
-                </ul>
-            </li>
-        `;
-        } else {
-            // Неавторизованный пользователь
-            navbarMenu.innerHTML = `
-            <li class="nav-item">
-                <a class="nav-link" href="/auth/login">
-                    <i class="bi bi-box-arrow-in-right"></i> Вход
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/auth/registration">
-                    <i class="bi bi-person-plus"></i> Регистрация
-                </a>
-            </li>
-        `;
-        }
-    }
-
-    function updateContent(token, username, userRole) {
-        const heroButtons = document.getElementById('heroButtons');
-        const mainContent = document.getElementById('mainContent');
-
-        if (token && username) {
-            // АВТОРИЗОВАННЫЙ ПОЛЬЗОВАТЕЛЬ
-            heroButtons.innerHTML = `
-                <a href="${userRole === 'STUDENT' ? '/student/dashboard' : '/teacher/dashboard'}"
-                   class="btn btn-light btn-lg me-3">
-                    Перейти к управлению
-                </a>
-                <a href="#quickStart" class="btn btn-outline-light btn-lg">
-                    Как начать?
-                </a>
-            `;
-
-            mainContent.innerHTML = `
-                <!-- Блок "Быстрый старт" для авторизованных -->
-                <section id="quickStart" class="py-5">
-                    <div class="container">
-                        <h2 class="text-center mb-5">Быстрый старт</h2>
-
-                        <div class="row">
-                            ${userRole === 'STUDENT' ? `
-                            <!-- Для студентов -->
-                            <div class="col-lg-4 mb-4">
-                                <div class="card h-100 border-primary">
-                                    <div class="card-body text-center">
-                                        <div class="mb-3">
-                                            <span class="display-4">📊</span>
-                                        </div>
-                                        <h4 class="card-title">Анализ компании</h4>
-                                        <p class="card-text">
-                                            Изучите текущее состояние вашей компании:
-                                            финансы, запасы, сотрудники
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-lg-4 mb-4">
-                                <div class="card h-100 border-primary">
-                                    <div class="card-body text-center">
-                                        <div class="mb-3">
-                                            <span class="display-4">💰</span>
-                                        </div>
-                                        <h4 class="card-title">Принятие решений</h4>
-                                        <p class="card-text">
-                                            Принимайте управленческие решения:
-                                            закупки, ценообразование, маркетинг
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-lg-4 mb-4">
-                                <div class="card h-100 border-primary">
-                                    <div class="card-body text-center">
-                                        <div class="mb-3">
-                                            <span class="display-4">📈</span>
-                                        </div>
-                                        <h4 class="card-title">Мониторинг результатов</h4>
-                                        <p class="card-text">
-                                            Отслеживайте влияние ваших решений
-                                            на финансовые показатели компании
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                            ` : ''}
-
-                            ${userRole === 'TEACHER' ? `
-                            <!-- Для преподавателей -->
-                            <div class="col-lg-4 mb-4">
-                                <div class="card h-100 border-success">
-                                    <div class="card-body text-center">
-                                        <div class="mb-3">
-                                            <span class="display-4">🏢</span>
-                                        </div>
-                                        <h4 class="card-title">Создание компаний</h4>
-                                        <p class="card-text">
-                                            Создайте виртуальные компании
-                                            с различными стартовыми условиями
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-lg-4 mb-4">
-                                <div class="card h-100 border-success">
-                                    <div class="card-body text-center">
-                                        <div class="mb-3">
-                                            <span class="display-4">👥</span>
-                                        </div>
-                                        <h4 class="card-title">Управление студентами</h4>
-                                        <p class="card-text">
-                                            Назначайте студентов на компании,
-                                            следите за их прогрессом
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-lg-4 mb-4">
-                                <div class="card h-100 border-success">
-                                    <div class="card-body text-center">
-                                        <div class="mb-3">
-                                            <span class="display-4">📋</span>
-                                        </div>
-                                        <h4 class="card-title">Генерация событий</h4>
-                                        <p class="card-text">
-                                            Создавайте реалистичные бизнес-ситуации
-                                            для проверки решений студентов
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                            ` : ''}
-                        </div>
-
-                        <!-- Кнопка для перехода -->
-                        <div class="text-center mt-5">
-                            <a href="${userRole === 'STUDENT' ? '/student/dashboard' : '/teacher/dashboard'}"
-                               class="btn btn-primary btn-lg px-5">
-                                Начать работу →
-                            </a>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Информация о системе -->
-                <section class="py-5 bg-light">
-                    <div class="container">
-                        <div class="row align-items-center">
-                            <div class="col-md-6">
-                                <h3>Система отчетности</h3>
-                                <p>
-                                    Получайте детализированные отчеты о деятельности компании:
-                                    финансовые результаты, движение товаров, эффективность решений.
-                                </p>
-                                <ul>
-                                    <li>Ежедневные финансовые отчеты</li>
-                                    <li>Анализ продаж и прибыли</li>
-                                    <li>История принятых решений</li>
-                                    <li>Сравнение с другими участниками</li>
-                                </ul>
-                            </div>
-                            <div class="col-md-6 text-center">
-                                <span class="display-1">📊</span>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            `;
-
-        } else {
-            // НЕАВТОРИЗОВАННЫЙ ПОЛЬЗОВАТЕЛЬ
-            heroButtons.innerHTML = `
-                <a href="/auth/registration" class="btn btn-light btn-lg me-3">
-                    Начать обучение
-                </a>
-                <a href="#for-whom" class="btn btn-outline-light btn-lg">
-                    Узнать больше
-                </a>
-            `;
-
-            mainContent.innerHTML = `
-                <section id="for-whom" class="py-5">
-                    <div class="container">
-                        <h2 class="text-center mb-5">Для кого этот симулятор?</h2>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-4">
-                                <div class="card h-100 border-primary">
-                                    <div class="card-body text-center">
-                                        <div class="mb-3">
-                                            <span class="display-1">🎓</span>
-                                        </div>
-                                        <h3 class="card-title">Для студентов</h3>
-                                        <p class="card-text">
-                                            Получите практический опыт управления бизнесом:
-                                        </p>
-                                        <ul class="text-start">
-                                            <li>Принимайте решения в условиях неопределенности</li>
-                                            <li>Анализируйте финансовые отчеты</li>
-                                            <li>Реагируйте на рыночные события</li>
-                                            <li>Соревнуйтесь с одногруппниками</li>
-                                        </ul>
-                                        <a href="/auth/register" class="btn btn-primary">
-                                            Стать студентом
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6 mb-4">
-                                <div class="card h-100 border-success">
-                                    <div class="card-body text-center">
-                                        <div class="mb-3">
-                                            <span class="display-1">👨‍🏫</span>
-                                        </div>
-                                        <h3 class="card-title">Для преподавателей</h3>
-                                        <p class="card-text">
-                                            Эффективный инструмент для обучения:
-                                        </p>
-                                        <ul class="text-start">
-                                            <li>Создавайте виртуальные компании</li>
-                                            <li>Настраивайте стартовые условия</li>
-                                            <li>Генерируйте бизнес-события</li>
-                                            <li>Отслеживайте прогресс студентов</li>
-                                        </ul>
-                                        <a href="/auth/register" class="btn btn-success">
-                                            Стать преподавателем
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Секция "Как это работает" -->
-                <section class="py-5 bg-light">
-                    <div class="container">
-                        <h2 class="text-center mb-5">Как работает симулятор?</h2>
-                        <div class="row">
-                            <div class="col-md-3 text-center mb-4">
-                                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
-                                     style="width: 80px; height: 80px; margin-bottom: 20px;">
-                                    <span class="h4">1</span>
-                                </div>
-                                <h5>Регистрация</h5>
-                                <p>Создайте аккаунт студента или преподавателя</p>
-                            </div>
-                            <div class="col-md-3 text-center mb-4">
-                                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
-                                     style="width: 80px; height: 80px; margin-bottom: 20px;">
-                                    <span class="h4">2</span>
-                                </div>
-                                <h5>Настройка</h5>
-                                <p>Преподаватель создает компании, студенты присоединяются</p>
-                            </div>
-                            <div class="col-md-3 text-center mb-4">
-                                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
-                                     style="width: 80px; height: 80px; margin-bottom: 20px;">
-                                    <span class="h4">3</span>
-                                </div>
-                                <h5>Симуляция</h5>
-                                <p>Студенты управляют компаниями, система генерирует события</p>
-                            </div>
-                            <div class="col-md-3 text-center mb-4">
-                                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center"
-                                     style="width: 80px; height: 80px; margin-bottom: 20px;">
-                                    <span class="h4">4</span>
-                                </div>
-                                <h5>Анализ</h5>
-                                <p>Преподаватель оценивает результаты, дает обратную связь</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            `;
-        }
-    }
-
-    function logout() {
-        if (confirm('Вы уверены, что хотите выйти из системы?')) {
-            localStorage.clear();
-            window.location.href = '/';
-        }
-    }
-</script>
+<script src="/js/index.js"></script>
 
 </body>
 </html>
