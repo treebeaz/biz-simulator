@@ -45,3 +45,31 @@
     border-bottom: none;
 }
 
+.hub-hero {
+    background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+    color: #ffffff;
+    border-radius: 24px;
+    padding: 22px 24px;
+}
+
+.hub-card {
+    border-radius: 22px;
+    overflow: hidden;
+}
+
+.hub-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+}
+
+.hub-icon-secondary {
+    background: linear-gradient(135deg, #20c997 0%, #0dcaf0 100%);
+}
+

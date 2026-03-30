@@ -3,15 +3,40 @@ document.addEventListener('DOMContentLoaded', function() {
     const username = localStorage.getItem('username');
     const userRole = localStorage.getItem('userRole');
 
-    updateNavigation(token, username);
+    updateNavigation(token, username, userRole);
     updateContent(token, username, userRole);
 });
 
-function updateNavigation(token, username) {
+function updateNavigation(token, username, userRole) {
     const navbarMenu = document.getElementById('navbarMenu');
     if (!navbarMenu) return;
 
     if (token && username) {
+        const teacherLinks = userRole === 'TEACHER'
+            ? `
+                <li>
+                    <a class="dropdown-item" href="/pages/teacher-groups.html">
+                        <i class="bi bi-people"></i> Мои группы
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="/pages/teacher-rooms.html">
+                        <i class="bi bi-building"></i> Комнаты
+                    </a>
+                </li>
+            `
+            : '';
+
+        const studentLinks = userRole === 'STUDENT'
+            ? `
+                <li>
+                    <a class="dropdown-item" href="/pages/student-group.html">
+                        <i class="bi bi-clipboard-check"></i> Моя группа
+                    </a>
+                </li>
+            `
+            : '';
+
         navbarMenu.innerHTML = `
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" role="button"
@@ -24,6 +49,8 @@ function updateNavigation(token, username) {
                             <i class="bi bi-person"></i> Личный кабинет
                         </a>
                     </li>
+                    ${teacherLinks}
+                    ${studentLinks}
                     <li><hr class="dropdown-divider"></li>
                     <li>
                         <a class="dropdown-item text-danger" href="#" onclick="logoutFromIndex()">
@@ -55,8 +82,15 @@ function updateContent(token, username) {
     if (!heroButtons || !ctaButtons) return;
 
     if (token && username) {
+        const userRole = localStorage.getItem('userRole');
+        const defaultRedirect = userRole === 'TEACHER'
+            ? '/pages/teacher-groups.html'
+            : userRole === 'STUDENT'
+                ? '/pages/student-group.html'
+                : '/profile';
+
         heroButtons.innerHTML = `
-            <a href="/profile" class="btn btn-light btn-lg me-3">
+            <a href="${defaultRedirect}" class="btn btn-light btn-lg me-3">
                 Перейти к управлению
             </a>
             <a href="#howItWorks" class="btn btn-outline-light btn-lg">
@@ -65,7 +99,7 @@ function updateContent(token, username) {
         `;
 
         ctaButtons.innerHTML = `
-            <a href="/profile" class="btn btn-primary btn-lg px-5">Перейти в личный кабинет</a>
+            <a href="${defaultRedirect}" class="btn btn-primary btn-lg px-5">Перейти к управлению</a>
         `;
     } else {
         heroButtons.innerHTML = `

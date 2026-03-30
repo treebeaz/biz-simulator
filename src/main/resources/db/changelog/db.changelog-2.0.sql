@@ -23,6 +23,7 @@ CREATE TABLE rooms
     CONSTRAINT fk_rooms_group_id FOREIGN KEY (group_id) REFERENCES groups (id)
 );
 
+--changeset karim:rooms-2
 CREATE TABLE room_rules
 (
     room_id               UUID PRIMARY KEY,

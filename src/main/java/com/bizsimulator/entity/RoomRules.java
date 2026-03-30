@@ -23,15 +23,19 @@ public class RoomRules {
     @JoinColumn(name = "room_id")
     private Room room;
 
+    @Builder.Default
     @Column(name = "rent_percent", nullable = false)
-    private BigDecimal rentPercent;
+    private BigDecimal rentPercent = new BigDecimal("0.30");
 
+    @Builder.Default
     @Column(name = "marketing_ref_percent", nullable = false)
-    private BigDecimal marketingRefPercent;
+    private BigDecimal marketingRefPercent =  new BigDecimal("0.02");
 
+    @Builder.Default
     @Column(name = "noise_min", nullable = false)
-    private BigDecimal noiseMin;
+    private BigDecimal noiseMin = new BigDecimal("0.85");
 
+    @Builder.Default
     @Column(name = "noise_max", nullable = false)
-    private BigDecimal noiseMax;
+    private BigDecimal noiseMax = new BigDecimal("1.15");
 }
