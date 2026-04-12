@@ -1,10 +1,11 @@
 package com.bizsimulator.controller.rest;
 
+import com.bizsimulator.dto.room.AddRoomStudentRequestDto;
 import com.bizsimulator.dto.room.RoomRequestDto;
 import com.bizsimulator.dto.room.RoomResponseDto;
+import com.bizsimulator.dto.room.RoomStudentDto;
 import com.bizsimulator.service.RoomService;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -38,6 +39,31 @@ public class RestRoomController {
     public ResponseEntity<Void> deleteRoom(@PathVariable UUID roomId,
                                            Authentication authentication) {
         roomService.deleteRoom(roomId, authentication);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{roomId}/students")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<List<RoomStudentDto>> getRoomStudents(@PathVariable UUID roomId,
+                                                                Authentication authentication) {
+        return ResponseEntity.ok(roomService.getRoomStudents(roomId, authentication));
+    }
+
+    @PostMapping("/{roomId}/students")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<RoomStudentDto> addRoomStudent(@PathVariable UUID roomId,
+                                                         @RequestBody AddRoomStudentRequestDto request,
+                                                         Authentication authentication) {
+        RoomStudentDto response = roomService.addStudentToRoom(roomId, request, authentication);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/{roomId}/students/{studentId}")
+    @PreAuthorize("hasRole('TEACHER')")
+    public ResponseEntity<Void> removeRoomStudent(@PathVariable UUID roomId,
+                                                  @PathVariable UUID studentId,
+                                                  Authentication authentication) {
+        roomService.removeStudentFromRoom(roomId, studentId, authentication);
         return ResponseEntity.noContent().build();
     }
 }

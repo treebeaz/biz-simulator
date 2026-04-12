@@ -3,6 +3,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
+    const roomStudentsRoot = document.getElementById('roomStudentsPageRoot');
+    const roomIdFromQuery = new URLSearchParams(window.location.search).get('roomId');
+    if (roomStudentsRoot && roomIdFromQuery) {
+        const role = localStorage.getItem('userRole');
+        if (role !== 'TEACHER') {
+            window.location.href = '/profile';
+            return;
+        }
+        loadProfileData();
+        initRoomStudentsPage(roomIdFromQuery);
+        return;
+    }
+
     loadProfileData();
 
     const role = localStorage.getItem('userRole');
@@ -547,9 +560,14 @@ async function loadTeacherRooms() {
             html += '<div class="small"><strong>Бюджет:</strong> ' + budget + '</div>';
             html += '<div class="small"><strong>Период:</strong> дни ' + period + '</div>';
             html += '<div class="small mb-3"><strong>Длительность дня:</strong> ' + duration + ' сек</div>';
+            html += '<div class="d-flex flex-wrap gap-2">';
+            html += '<a class="btn btn-sm btn-outline-primary" href="/pages/teacher-room-students.html?roomId=' + encodeURIComponent(roomId) + '">';
+            html += '<i class="bi bi-people"></i> Участники';
+            html += '</a>';
             html += '<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteRoom(\'' + roomId + '\')">';
             html += '<i class="bi bi-trash"></i> Удалить';
             html += '</button>';
+            html += '</div>';
             html += '</div>';
             html += '</div>';
             html += '</div>';
@@ -596,6 +614,232 @@ async function deleteRoom(roomId) {
         showMessage(err.message || 'Не удалось удалить комнату', 'danger');
     } catch (e) {
         showMessage('Не удалось удалить комнату', 'danger');
+    }
+}
+
+function initRoomStudentsPage(roomId) {
+    window.__roomStudentsRoomId = roomId;
+    loadRoomStudentsPageData(roomId);
+}
+
+function resolveStudentUserId(participant, groupStudents) {
+    if (!participant) return '';
+    if (participant.userStudentId) return participant.userStudentId;
+    if (participant.userId) return participant.userId;
+    const u = participant.username || '';
+    const e = participant.email || '';
+    const list = groupStudents || [];
+    for (let i = 0; i < list.length; i++) {
+        const s = list[i];
+        if (s.username === u || (s.emailStudent && s.emailStudent === e)) {
+            return s.studentId || '';
+        }
+    }
+    return participant.studentId || '';
+}
+
+function fillAddRoomStudentSelect(roomId, members, groupStudents) {
+    const select = document.getElementById('addRoomStudentSelect');
+    if (!select) return;
+
+    const inRoomIds = {};
+    (members || []).forEach(function(m) {
+        const uid = resolveStudentUserId(m, groupStudents);
+        if (uid) inRoomIds[uid] = true;
+    });
+
+    let options = '<option value="">Выберите студента</option>';
+    const students = groupStudents || [];
+    let count = 0;
+    students.forEach(function(s) {
+        const sid = s.studentId || '';
+        if (!sid || inRoomIds[sid]) return;
+        const labelParts = [];
+        if (s.nameStudent) labelParts.push(s.nameStudent);
+        if (s.username) labelParts.push('(' + s.username + ')');
+        const label = labelParts.length ? labelParts.join(' ') : sid;
+        options += '<option value="' + sid + '">' + label + '</option>';
+        count++;
+    });
+
+    select.innerHTML = options;
+    select.disabled = count === 0;
+}
+
+function renderRoomStudentsTable(roomId, members, groupStudents) {
+    const wrap = document.getElementById('roomStudentsTableWrap');
+    if (!wrap) return;
+
+    if (!Array.isArray(members) || members.length === 0) {
+        wrap.innerHTML = '<span class="text-muted">В комнате пока нет студентов.</span>';
+        return;
+    }
+
+    let html = '<div class="table-responsive"><table class="table table-sm align-middle mb-0">';
+    html += '<thead><tr><th>Студент</th><th>Логин</th><th>Email</th><th>Статус</th><th></th></tr></thead><tbody>';
+    members.forEach(function(m) {
+        const name = m.fullName || '—';
+        const username = m.username || '—';
+        const email = m.email || '—';
+        const status = m.status || '—';
+        const userIdForRemove = resolveStudentUserId(m, groupStudents);
+        html += '<tr>';
+        html += '<td>' + name + '</td>';
+        html += '<td>' + username + '</td>';
+        html += '<td>' + email + '</td>';
+        html += '<td><span class="badge bg-secondary">' + status + '</span></td>';
+        html += '<td class="text-end">';
+        if (userIdForRemove) {
+            html += '<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRoomParticipant(\'' +
+                roomId + '\',\'' + userIdForRemove + '\')">Убрать</button>';
+        } else {
+            html += '<span class="text-muted small">—</span>';
+        }
+        html += '</td>';
+        html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+    wrap.innerHTML = html;
+}
+
+async function loadRoomStudentsPageData(roomId) {
+    const titleEl = document.getElementById('roomStudentsTitle');
+    const subEl = document.getElementById('roomStudentsSubtitle');
+    const wrap = document.getElementById('roomStudentsTableWrap');
+
+    if (wrap) wrap.innerHTML = 'Загрузка...';
+
+    try {
+        const [roomsRes, groupsRes, studentsRes] = await Promise.all([
+            fetch('/api/rooms', { headers: getAuthHeaders() }),
+            fetch('/api/groups/teacher', { headers: getAuthHeaders() }),
+            fetch('/api/rooms/' + roomId + '/students', { headers: getAuthHeaders() })
+        ]);
+
+        if (!roomsRes.ok || !groupsRes.ok) {
+            if (wrap) wrap.innerHTML = 'Не удалось загрузить данные.';
+            showMessage('Не удалось загрузить комнату или группы', 'danger');
+            return;
+        }
+
+        const rooms = await roomsRes.json();
+        const room = Array.isArray(rooms) ? rooms.find(function(r) { return r.roomId === roomId; }) : null;
+        if (!room) {
+            if (wrap) wrap.innerHTML = 'Комната не найдена.';
+            showMessage('Комната не найдена', 'danger');
+            return;
+        }
+
+        if (titleEl) titleEl.textContent = room.roomName || 'Комната';
+        const groups = await groupsRes.json();
+        const gid = room.groupId || '';
+        const group = Array.isArray(groups) ? groups.find(function(g) {
+            return (g.groupId || g.id) === gid;
+        }) : null;
+        const gname = group && (group.groupName || group.name) ? (group.groupName || group.name) : gid;
+        if (subEl) subEl.textContent = 'Группа: ' + (gname || '—') + ' · Управление составом комнаты';
+
+        const groupStudents = group && group.students ? group.students : [];
+        window.__roomStudentsGroupStudents = groupStudents;
+
+        let members = [];
+        if (studentsRes.ok) {
+            members = await studentsRes.json();
+        } else {
+            if (wrap) wrap.innerHTML = 'Не удалось загрузить участников.';
+            showMessage('Не удалось загрузить список участников комнаты', 'danger');
+            return;
+        }
+
+        window.__roomStudentsMembers = members;
+        fillAddRoomStudentSelect(roomId, members, groupStudents);
+        renderRoomStudentsTable(roomId, members, groupStudents);
+    } catch (e) {
+        if (wrap) wrap.innerHTML = 'Ошибка загрузки.';
+        showMessage('Ошибка при загрузке страницы', 'danger');
+    }
+}
+
+async function reloadRoomStudentsList() {
+    const roomId = window.__roomStudentsRoomId;
+    if (!roomId) return;
+
+    const wrap = document.getElementById('roomStudentsTableWrap');
+    if (wrap) wrap.innerHTML = 'Загрузка...';
+
+    try {
+        const res = await fetch('/api/rooms/' + roomId + '/students', { headers: getAuthHeaders() });
+        if (!res.ok) {
+            if (wrap) wrap.innerHTML = 'Не удалось обновить список.';
+            return;
+        }
+        const members = await res.json();
+        window.__roomStudentsMembers = members;
+        const groupStudents = window.__roomStudentsGroupStudents || [];
+        fillAddRoomStudentSelect(roomId, members, groupStudents);
+        renderRoomStudentsTable(roomId, members, groupStudents);
+    } catch (e) {
+        if (wrap) wrap.innerHTML = 'Ошибка.';
+    }
+}
+
+async function submitAddRoomStudent() {
+    if (!checkAuth()) return;
+    const roomId = window.__roomStudentsRoomId;
+    const select = document.getElementById('addRoomStudentSelect');
+    if (!roomId || !select) return;
+
+    const studentId = (select.value || '').trim();
+    if (!studentId) {
+        showMessage('Выберите студента', 'danger');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/rooms/' + roomId + '/students', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ studentId: studentId })
+        });
+
+        if (response.status === 201 || response.status === 200) {
+            showMessage('Студент добавлен в комнату', 'success');
+            if (select) select.value = '';
+            await reloadRoomStudentsList();
+            return;
+        }
+
+        const err = await response.json().catch(function() { return {}; });
+        showMessage(err.message || 'Не удалось добавить студента', 'danger');
+    } catch (e) {
+        showMessage('Не удалось добавить студента', 'danger');
+    }
+}
+
+async function removeRoomParticipant(roomId, studentUserId) {
+    if (!checkAuth()) return;
+    if (!roomId || !studentUserId) return;
+
+    if (!confirm('Убрать студента из комнаты?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/rooms/' + roomId + '/students/' + studentUserId, {
+            method: 'POST',
+            headers: getAuthHeaders()
+        });
+
+        if (response.status === 204) {
+            showMessage('Студент убран из комнаты', 'success');
+            await reloadRoomStudentsList();
+            return;
+        }
+
+        const err = await response.json().catch(function() { return {}; });
+        showMessage(err.message || 'Не удалось убрать студента', 'danger');
+    } catch (e) {
+        showMessage('Не удалось убрать студента', 'danger');
     }
 }
 
