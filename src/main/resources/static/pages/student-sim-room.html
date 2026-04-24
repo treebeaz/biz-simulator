@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Симуляция: моя компания</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/profile.css">
+</head>
+<body class="profile-page">
+<nav class="navbar navbar-expand-lg navbar-light bg-light" id="mainNavbar">
+    <div class="container">
+        <a class="navbar-brand" href="/">Бизнес-симулятор</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto" id="navbarMenu"></ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4" id="studentSimPageRoot">
+    <div class="hub-hero mb-4">
+        <h2 class="mb-2">Моя симуляция</h2>
+        <p class="mb-0 text-white-50" id="studentSimSubtitle">Комната определяется автоматически. Управляйте решениями и следите за временем симуляции.</p>
+    </div>
+
+    <div id="message" class="alert alert-dismissible fade show d-none" role="alert">
+        <span id="messageText"></span>
+        <button type="button" class="btn-close" onclick="hideMessage()"></button>
+    </div>
+
+    <div id="studentSimEmptyState" class="card hub-card shadow-sm mb-3 d-none">
+        <div class="card-body p-4">
+            <h5 class="mb-2">Комната пока не назначена</h5>
+            <p class="text-muted mb-3">
+                Преподаватель должен добавить вас в комнату (участники комнаты). После этого симуляция появится автоматически.
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-outline-primary" href="/pages/student-group.html">
+                    <i class="bi bi-people"></i> Моя группа
+                </a>
+                <button class="btn btn-outline-secondary" type="button" onclick="initStudentSimulationPage()">
+                    <i class="bi bi-arrow-clockwise"></i> Проверить снова
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card hub-card shadow-sm mb-3">
+        <div class="card-body p-3">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                    <div class="small text-muted">Текущий день</div>
+                    <div class="h5 mb-0" id="simCurrentDayValue">—</div>
+                </div>
+                <div>
+                    <div class="small text-muted">Таймер дня</div>
+                    <div class="h5 mb-0" id="simDayTimerValue">—</div>
+                </div>
+                <div>
+                    <div class="small text-muted">Скорость</div>
+                    <div class="h5 mb-0" id="simSpeedValue">x1</div>
+                </div>
+                <div>
+                    <div class="small text-muted">Статус</div>
+                    <div class="h5 mb-0" id="simRunningValue">—</div>
+                </div>
+            </div>
+            <div class="mt-3">
+                <div class="small text-muted mb-1">Прогресс дня</div>
+                <div class="progress" style="height: 10px;">
+                    <div id="simDayProgressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="mt-3 d-flex flex-wrap gap-2">
+                <button class="btn btn-success" onclick="startStudentSimulation()"><i class="bi bi-play-fill"></i> Начать</button>
+                <button class="btn btn-outline-warning" onclick="pauseStudentSimulation()"><i class="bi bi-pause-fill"></i> Пауза</button>
+                <button class="btn btn-outline-success" onclick="resumeStudentSimulation()"><i class="bi bi-play-circle"></i> Продолжить</button>
+                <button class="btn btn-outline-danger" onclick="finishStudentSimulation()"><i class="bi bi-stop-circle"></i> Завершить</button>
+                <button class="btn btn-outline-primary" onclick="respawnStudentSimulation()"><i class="bi bi-arrow-counterclockwise"></i> Респаун</button>
+                <button class="btn btn-outline-secondary" onclick="setStudentSimulationSpeed(1)">x1</button>
+                <button class="btn btn-outline-secondary" onclick="setStudentSimulationSpeed(2)">x2</button>
+                <button class="btn btn-outline-secondary" onclick="setStudentSimulationSpeed(4)">x4</button>
+                <button class="btn btn-outline-secondary ms-auto" type="button" onclick="toggleSimDetails()">
+                    <i class="bi bi-sliders"></i> Параметры
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card hub-card shadow-sm mb-3 d-none" id="simDetailsCard">
+        <div class="card-body p-3">
+            <div class="d-flex align-items-center justify-content-between gap-2">
+                <div class="fw-semibold">Параметры и ограничения</div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleSimDetails()">Скрыть</button>
+            </div>
+            <div class="small text-muted mt-2" id="simConstraintsText">Загрузка параметров…</div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="card hub-card shadow-sm h-100">
+                <div class="card-body p-4">
+                    <h6 class="mb-3">Решение на день</h6>
+
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label for="decisionPriceInput" class="form-label">Цена продажи</label>
+                            <input type="number" id="decisionPriceInput" class="form-control" min="50" step="0.01" placeholder="250.00">
+                            <div class="form-text" id="decisionPriceHint">Минимальная цена: 50 ₽.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="decisionPurchaseUnitsInput" class="form-label">Закупить единиц</label>
+                            <input type="number" id="decisionPurchaseUnitsInput" class="form-control" min="0" step="1" placeholder="0">
+                            <div class="form-text" id="decisionPurchaseHint">Цена закупки: 120 ₽ / ед. (ориентир).</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="decisionMarketingInput" class="form-label">Маркетинг на день</label>
+                            <input type="number" id="decisionMarketingInput" class="form-control" min="0" step="0.01" placeholder="0">
+                            <div class="form-text">
+                                Маркетинг списывается один раз за текущий день (не “подписка”).
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="decisionHireJuniorInput" class="form-label">Нанять новичка</label>
+                            <input type="number" id="decisionHireJuniorInput" class="form-control" min="0" step="1" placeholder="0">
+                            <div class="form-text" id="decisionHireHint">Лимит слотов персонала учитывается.</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="decisionFireJuniorInput" class="form-label">Уволить новичка</label>
+                            <input type="number" id="decisionFireJuniorInput" class="form-control" min="0" step="1" placeholder="0">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="decisionHireExperiencedInput" class="form-label">Нанять опытного</label>
+                            <input type="number" id="decisionHireExperiencedInput" class="form-control" min="0" step="1" placeholder="0">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="decisionFireExperiencedInput" class="form-label">Уволить опытного</label>
+                            <input type="number" id="decisionFireExperiencedInput" class="form-control" min="0" step="1" placeholder="0">
+                        </div>
+                    </div>
+
+                    <div class="mt-3 d-flex flex-wrap gap-2">
+                        <button class="btn btn-primary" onclick="submitStudentDecision()">
+                            <i class="bi bi-send"></i> Отправить решение
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="resetStudentDecisionForm()">
+                            Сбросить
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="loadStudentSimulationState()">
+                            <i class="bi bi-arrow-clockwise"></i> Обновить состояние
+                        </button>
+                    </div>
+
+                    <div class="mt-3 small text-muted" id="decisionHintsBlock"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card hub-card shadow-sm h-100">
+                <div class="card-body p-4">
+                    <h6 class="mb-3">Текущее состояние</h6>
+                    <div id="studentSimStateWrap">Загрузка...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/index.js"></script>
+<script src="/js/profile.js"></script>
+</body>
+</html>
+

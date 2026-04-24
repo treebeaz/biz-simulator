@@ -34,6 +34,11 @@ function updateNavigation(token, username, userRole) {
                         <i class="bi bi-clipboard-check"></i> Моя группа
                     </a>
                 </li>
+                <li>
+                    <a class="dropdown-item" href="/pages/student-sim-room.html">
+                        <i class="bi bi-graph-up-arrow"></i> Моя симуляция
+                    </a>
+                </li>
             `
             : '';
 

@@ -98,10 +98,34 @@ public class GroupService {
         Group group = groupStudent.getGroup();
         User teacher = group.getTeacher();
 
+        List<GroupStudent> members = groupStudentRepository.findAllByGroupId(group.getId());
+
+        List<ClassmateDto> classmates = members.stream()
+                .map(GroupStudent::getStudent)
+                .filter(user -> !user.getId().equals(student.getId()))
+                .map(user -> {
+                    UserProfile userProfile = user.getUserProfile();
+                    String fullName = String.format("%s %s",
+                            userProfile.getFirstName(),
+                            userProfile.getLastName());
+
+                    return ClassmateDto.builder()
+                            .studentId(user.getId().toString())
+                            .username(user.getUsername())
+                            .fullName(fullName)
+                            .email(user.getEmail())
+                            .build();
+
+                })
+                .toList();
+
         return StudentGroupResponseDto.builder()
                 .groupName(group.getName())
-                .teacherName(teacher.getUserProfile().getFirstName() + teacher.getUserProfile().getLastName())
+                .teacherName(String.format("%s %s",
+                        teacher.getUserProfile().getFirstName(),
+                        teacher.getUserProfile().getLastName()))
                 .teacherEmail(teacher.getEmail())
+                .classmate(classmates)
                 .build();
     }
 

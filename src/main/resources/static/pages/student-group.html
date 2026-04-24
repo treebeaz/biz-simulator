@@ -37,6 +37,24 @@
                 <div><strong>Email преподавателя:</strong> <span id="studentTeacherEmail">—</span></div>
             </div>
 
+            <div id="studentClassmatesBlock" class="d-none">
+                <hr>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0">Одногруппники</h6>
+                    <span id="studentClassmatesCount" class="badge bg-secondary">0</span>
+                </div>
+                <div id="studentClassmatesList"></div>
+            </div>
+
+            <hr>
+            <div>
+                <h6 class="mb-2">Симуляция</h6>
+                <button class="btn btn-outline-primary" type="button" onclick="openStudentSimulation()">
+                    <i class="bi bi-play-circle"></i> Перейти в симуляцию
+                </button>
+                <div class="small text-muted mt-2">Комната будет определена автоматически по вашему участию.</div>
+            </div>
+
             <div id="studentJoinForm">
                 <div class="mb-2">
                     <label for="joinCodeInput" class="form-label">Код приглашения</label>

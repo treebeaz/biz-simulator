@@ -1,10 +1,13 @@
 package com.bizsimulator.service;
 
 import com.bizsimulator.dto.room.*;
+import com.bizsimulator.dto.sim.RoomRuntimeResponseDto;
 import com.bizsimulator.entity.*;
 import com.bizsimulator.entity.enums.Role;
 import com.bizsimulator.entity.enums.RoomStatus;
 import com.bizsimulator.entity.enums.RoomStudentStatus;
+import com.bizsimulator.entity.sim.RoomRuntime;
+import com.bizsimulator.entity.sim.RoomSimResponseDto;
 import com.bizsimulator.exception.*;
 import com.bizsimulator.repository.RoomRepository;
 import com.bizsimulator.repository.RoomStudentRepository;
@@ -15,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -74,12 +76,18 @@ public class RoomService {
                 .build();
     }
 
-    private RoomRulesDto getRoomRules(RoomRules roomRules) {
+    protected RoomRulesDto getRoomRules(RoomRules roomRules) {
         return RoomRulesDto.builder()
                 .rentPercent(roomRules.getRentPercent())
                 .marketingRefPercent(roomRules.getMarketingRefPercent())
                 .noiseMin(roomRules.getNoiseMin())
                 .noiseMax(roomRules.getNoiseMax())
+                .cap0(roomRules.getCap0())
+                .staffSlots(roomRules.getStaffSlots())
+                .experiencedCapacity(roomRules.getExperiencedCapacity())
+                .juniorCapacity(roomRules.getJuniorCapacity())
+                .experiencedSalaryMonth(roomRules.getExperiencedSalaryMonth())
+                .juniorSalaryMonth(roomRules.getJuniorSalaryMonth())
                 .build();
     }
 
@@ -145,7 +153,7 @@ public class RoomService {
 
         log.info("RoomService.toRoomStudentDto.Success: Build RoomStudentDto successfully");
         return RoomStudentDto.builder()
-                .studentId(roomStudent.getId().toString())
+                .studentId(roomStudent.getStudentId().toString())
                 .username(student.getUsername())
                 .fullName(fullName)
                 .email(student.getEmail())
@@ -157,8 +165,8 @@ public class RoomService {
 
     @Transactional
     public RoomStudentDto addStudentToRoom(UUID roomId,
-                                 AddRoomStudentRequestDto request,
-                                 Authentication authentication) {
+                                           AddRoomStudentRequestDto request,
+                                           Authentication authentication) {
         Room room = getRoomById(roomId, authentication);
 
         User student = userService.findById(request.getStudentId())
@@ -167,12 +175,12 @@ public class RoomService {
                     return new UserNotFoundException("User not found");
                 });
 
-        if(student.getRole() != Role.STUDENT) {
+        if (student.getRole() != Role.STUDENT) {
             log.error("RoomService.addStudentToRoom.Error: User with role {} is not a student", student.getRole().toString());
             throw new IllegalArgumentException("User is not a student");
         }
 
-        if(roomStudentRepository.existsByRoomIdAndStudentId(room.getId(), student.getId())) {
+        if (roomStudentRepository.existsByRoomIdAndStudentId(room.getId(), student.getId())) {
             log.error("RoomService.addStudentToRoom.Error: Room with id {} already exists with student {}", room.getId(), student.getId());
             throw new RoomStudentAlreadyExistsException("Student already added to room");
         }

@@ -12,4 +12,10 @@ public class RoomRulesDto {
     BigDecimal marketingRefPercent;
     BigDecimal noiseMin;
     BigDecimal noiseMax;
+    Integer cap0;
+    Integer staffSlots;
+    Integer experiencedCapacity;
+    Integer juniorCapacity;
+    BigDecimal experiencedSalaryMonth;
+    BigDecimal juniorSalaryMonth;
 }

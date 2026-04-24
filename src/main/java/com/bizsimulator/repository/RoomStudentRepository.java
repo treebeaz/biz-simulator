@@ -13,4 +13,5 @@ public interface RoomStudentRepository extends JpaRepository<RoomStudent, UUID> 
     List<RoomStudent> findAllByRoomId(UUID roomId);
     boolean existsByRoomIdAndStudentId(UUID roomId, UUID studentId);
     Optional<RoomStudent> findByRoomIdAndStudentId(UUID roomId, UUID studentId);
+    Optional<RoomStudent> findFirstByStudentId(UUID studentId);
 }
