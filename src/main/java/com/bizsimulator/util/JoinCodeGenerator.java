@@ -1,10 +1,7 @@
 package com.bizsimulator.util;
 
-import com.bizsimulator.exception.CodeAlreadyExistsException;
 import com.bizsimulator.exception.CodeGenerationException;
-import com.bizsimulator.repository.GroupRepository;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import com.bizsimulator.repository.group.GroupRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -35,11 +32,12 @@ public class JoinCodeGenerator {
             generatedCode = generateCode();
             attempt++;
             if(attempt > 10) {
-                log.error("JoinCodeGenerator.generate.warn.TooManyAttemptsToGenerateUniqueCode");
+                log.error("JoinCodeGenerator.generate.Warn.TooManyAttemptsToGenerateUniqueCode");
                 throw new CodeGenerationException("JoinCodeGenerator.generate.error: Too many attempts to generate unique code");
             }
         } while (groupRepository.existsByJoinCode(generatedCode));
 
+        log.info("JoinCodeGenerator.generate.Success: Code was generated successfully");
         return generatedCode;
     }
 

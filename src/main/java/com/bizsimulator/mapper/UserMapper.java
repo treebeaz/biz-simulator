@@ -1,8 +1,8 @@
 package com.bizsimulator.mapper;
 
 import com.bizsimulator.dto.auth.RegistrationRequestDto;
-import com.bizsimulator.entity.User;
-import com.bizsimulator.entity.UserProfile;
+import com.bizsimulator.entity.user.User;
+import com.bizsimulator.entity.user.UserProfile;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

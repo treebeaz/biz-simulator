@@ -1,210 +1,141 @@
 package com.bizsimulator.service;
 
-import com.bizsimulator.dto.room.*;
-import com.bizsimulator.dto.sim.RoomRuntimeResponseDto;
-import com.bizsimulator.entity.*;
-import com.bizsimulator.entity.enums.Role;
-import com.bizsimulator.entity.enums.RoomStatus;
-import com.bizsimulator.entity.enums.RoomStudentStatus;
-import com.bizsimulator.entity.sim.RoomRuntime;
-import com.bizsimulator.entity.sim.RoomSimResponseDto;
-import com.bizsimulator.exception.*;
-import com.bizsimulator.repository.RoomRepository;
-import com.bizsimulator.repository.RoomStudentRepository;
+import com.bizsimulator.dto.room.CreateRoomRequest;
+import com.bizsimulator.dto.room.JoinRoomByCodeRequest;
+import com.bizsimulator.dto.room.RoomResponseDto;
+import com.bizsimulator.entity.enums.Status;
+import com.bizsimulator.entity.room.Room;
+import com.bizsimulator.entity.room.RoomParticipant;
+import com.bizsimulator.entity.user.User;
+import com.bizsimulator.exception.room.RoomByJoinCodeNotFoundException;
+import com.bizsimulator.exception.room.RoomNotFoundException;
+import com.bizsimulator.exception.room.RoomWithTeacherIdDoesNotExistsException;
+import com.bizsimulator.exception.room.StudentIsAlreadyInRoomException;
+import com.bizsimulator.mapper.RoomMapper;
+import com.bizsimulator.repository.room.RoomParticipantRepository;
+import com.bizsimulator.repository.room.RoomRepository;
+import com.bizsimulator.util.JoinCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
 @Service
 @Slf4j
+@Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class RoomService {
 
-    private final UserService userService;
+    private static final Integer MAX_TURNS_CONST = 30;
+    private static final Boolean IS_TEACHER_TRUE = Boolean.TRUE;
+    private static final Boolean IS_TEACHER_FALSE = Boolean.FALSE;
+    private static final Integer CURRENT_STEP_DEFAULT = 0;
+
     private final RoomRepository roomRepository;
-    private final RoomStudentRepository roomStudentRepository;
+    private final RoomParticipantRepository roomParticipantRepository;
+
+    private final UserService userService;
+    private final JoinCodeGenerator joinCodeGenerator;
+
+    private final RoomMapper roomMapper;
 
     @Transactional
-    public RoomResponseDto createRoom(RoomRequestDto roomRequestDto,
+    @PreAuthorize("hasRole('TEACHER')")
+    public RoomResponseDto createRoom(CreateRoomRequest request,
                                       Authentication authentication) {
-        if (roomRequestDto == null) {
-            log.error("RoomService.CreateRoom.RoomRequestDto is null");
-            throw new IllegalArgumentException("Request Dto is null");
+        User teacher = userService.getCurrentAuthenticationUser(authentication);
+        Room room = buildDefaultRoomEntity(request, teacher.getId());
+        Room savedRoom = roomRepository.save(room);
+
+        log.info("Room with id {} has been created", savedRoom.getId());
+        return roomMapper.toRoomResponseDto(savedRoom, IS_TEACHER_TRUE);
+    }
+
+    private Room buildDefaultRoomEntity(CreateRoomRequest request,
+                                        UUID teacherId) {
+        return Room.builder()
+                .teacherId(teacherId)
+                .name(request.getName())
+                .businessType(request.getBusinessType())
+                .status(Status.DRAFT)
+                .maxTurns(MAX_TURNS_CONST)
+                .joinCode(joinCodeGenerator.generate())
+                .build();
+    }
+
+    @Transactional
+    @PreAuthorize("hasRole('STUDENT')")
+    public RoomResponseDto joinRoomByCode(JoinRoomByCodeRequest request,
+                                    Authentication authentication) {
+        User student  = userService.getCurrentAuthenticationUser(authentication);
+        Room room = roomRepository.findByJoinCode(request.getJoinCode())
+                .orElseThrow(() -> {
+                     log.error("RoomService.joinRoomByCode.Error: Room by code {} not found", request.getJoinCode());
+                     return new RoomByJoinCodeNotFoundException("Room by join code not found");
+                });
+        boolean roomExists = roomParticipantRepository.existsByRoomIdAndUserId(room.getId(), student.getId());
+        if(roomExists) {
+            log.error("RoomService.joinRoomByCode.Error: Student with id {} is already joined to the room",
+                    request.getJoinCode());
+            throw new StudentIsAlreadyInRoomException("Student already joined the room");
         }
 
+        RoomParticipant roomParticipant = buildRoomParticipantEntity(room.getId(), student.getId());
+        roomParticipantRepository.save(roomParticipant);
+
+        log.info("RoomService.joinRoomByCode.Success: Student joined to the room with id {}", room.getId());
+        return roomMapper.toRoomResponseDto(room, IS_TEACHER_FALSE);
+    }
+
+    private RoomParticipant buildRoomParticipantEntity(UUID roomId,
+                                                       UUID studentId) {
+        return RoomParticipant.builder()
+                .roomId(roomId)
+                .userId(studentId)
+                .currentStep(CURRENT_STEP_DEFAULT)
+                .joinedAt(LocalDateTime.now())
+                .build();
+    }
+
+    @PreAuthorize("hasRole('TEACHER')")
+    public List<RoomResponseDto> getAllRoomByTeacher(Authentication authentication) {
         User teacher = userService.getCurrentAuthenticationUser(authentication);
-
-        Room room = Room.builder()
-                .teacherId(teacher.getId())
-                .groupId(roomRequestDto.getGroupId())
-                .roomName(roomRequestDto.getRoomName())
-                .businessType(roomRequestDto.getBusinessType())
-                .roomStatus(RoomStatus.DRAFT)
-                .initialBudget(roomRequestDto.getInitialBudget())
-                .startDay(1)
-                .endDay(30)
-                .dayDurationSeconds(30)
-                .build();
-
-        RoomRules roomRules = RoomRules.builder().build();
-        room.setRules(roomRules);
-
-        Room savedRoom = roomRepository.save(room);
-        log.info("RoomService.CreateRoom.Room created successfully");
-        return toResponse(savedRoom);
-    }
-
-    private RoomResponseDto toResponse(Room room) {
-        return RoomResponseDto.builder()
-                .roomId(room.getId().toString())
-                .teacherId(room.getTeacherId().toString())
-                .groupId(room.getGroupId().toString())
-                .roomName(room.getRoomName())
-                .businessType(room.getBusinessType().toString())
-                .roomStatus(room.getRoomStatus().toString())
-                .initialBudget(room.getInitialBudget())
-                .startDay(room.getStartDay())
-                .endDay(room.getEndDay())
-                .duration(room.getDayDurationSeconds())
-                .roomRules(getRoomRules(room.getRules()))
-                .build();
-    }
-
-    protected RoomRulesDto getRoomRules(RoomRules roomRules) {
-        return RoomRulesDto.builder()
-                .rentPercent(roomRules.getRentPercent())
-                .marketingRefPercent(roomRules.getMarketingRefPercent())
-                .noiseMin(roomRules.getNoiseMin())
-                .noiseMax(roomRules.getNoiseMax())
-                .cap0(roomRules.getCap0())
-                .staffSlots(roomRules.getStaffSlots())
-                .experiencedCapacity(roomRules.getExperiencedCapacity())
-                .juniorCapacity(roomRules.getJuniorCapacity())
-                .experiencedSalaryMonth(roomRules.getExperiencedSalaryMonth())
-                .juniorSalaryMonth(roomRules.getJuniorSalaryMonth())
-                .build();
-    }
-
-    public List<RoomResponseDto> getTeacherRooms(Authentication authentication) {
-        User teacher = userService.getCurrentAuthenticationUser(authentication);
-
+        log.info("RoomService.getAllRoomByTeacher.Success: All rooms were successfully found");
         return roomRepository.findAllByTeacherId(teacher.getId())
                 .stream()
-                .map(this::toResponse)
+                .map(r -> roomMapper.toRoomResponseDto(r, IS_TEACHER_TRUE))
                 .collect(Collectors.toList());
     }
 
-    @Transactional
-    public void deleteRoom(UUID roomId, Authentication authentication) {
-        User teacher = userService.getCurrentAuthenticationUser(authentication);
-
-        Room room = roomRepository.findById(roomId)
-                .orElseThrow(() -> {
-                    log.error("RoomService.DeleteRoom.Room not found with id");
-                    return new RoomNotFoundException("Room not found");
-                });
-        if (room.getTeacherId() == null || !room.getTeacherId().equals(teacher.getId())) {
-            log.error("RoomService.DeleteRoom.Room not found with teacher id");
-            throw new RoomWithTeacherIdNotFoundException("Room with this teacher id does not exist");
-        }
-        roomRepository.delete(room);
-        log.info("RoomService.DeleteRoom.Room deleted successfully");
-    }
-
-    public List<RoomStudentDto> getRoomStudents(UUID roomId,
-                                                Authentication authentication) {
-        Room room = getRoomById(roomId, authentication);
-
-        return roomStudentRepository.findAllByRoomId(room.getId())
-                .stream()
-                .map(this::toRoomStudentDto)
-                .toList();
-    }
-
+    @PreAuthorize("hasRole('TEACHER')")
     private Room getRoomById(UUID roomId, Authentication authentication) {
-        User teacher = userService.getCurrentAuthenticationUser(authentication);
+        User teacher =  userService.getCurrentAuthenticationUser(authentication);
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> {
                     log.error("RoomService.getRoomById.Error: Room with id {} not found", roomId);
                     return new RoomNotFoundException("Room not found");
                 });
-        if (!room.getTeacherId().equals(teacher.getId())) {
-            log.error("RoomService.getRoomById.Error: Room with teacher id {} does not exist`", teacher.getId());
-            throw new RoomAccessDeniedException("You have no access to this room");
+        if(!room.getTeacherId().equals(teacher.getId())) {
+            log.error("RoomService.getRoomById.Error: Room with teacher id {} does not exists", teacher.getId());
+            throw new RoomWithTeacherIdDoesNotExistsException("Room does not exists");
         }
-        log.info("RoomService.getRoomById.Success: Rooms found successfully");
+
+        log.info("RoomService.getRoomById.Success: Getting room with id {}", roomId);
         return room;
     }
 
-    private RoomStudentDto toRoomStudentDto(RoomStudent roomStudent) {
-        User student = userService.findById(roomStudent.getStudentId())
-                .orElseThrow(() -> {
-                    log.error("RoomService.toRoomStudentDto.Error: Student with id {} not found", roomStudent.getStudentId());
-                    return new UserNotFoundException("Student not found");
-                });
-        UserProfile userProfile = student.getUserProfile();
-        String fullName = userProfile.getFirstName() + " " + userProfile.getLastName();
-
-        log.info("RoomService.toRoomStudentDto.Success: Build RoomStudentDto successfully");
-        return RoomStudentDto.builder()
-                .studentId(roomStudent.getStudentId().toString())
-                .username(student.getUsername())
-                .fullName(fullName)
-                .email(student.getEmail())
-                .status(roomStudent.getStatus().name())
-                .attemptNo(roomStudent.getAttemptNo())
-                .joinedAt(roomStudent.getJoinedAt().toString())
-                .build();
-    }
-
     @Transactional
-    public RoomStudentDto addStudentToRoom(UUID roomId,
-                                           AddRoomStudentRequestDto request,
-                                           Authentication authentication) {
+    @PreAuthorize("hasRole('TEACHER')")
+    public void deleteRoom(UUID roomId, Authentication authentication) {
         Room room = getRoomById(roomId, authentication);
-
-        User student = userService.findById(request.getStudentId())
-                .orElseThrow(() -> {
-                    log.error("RoomService.addStudentToRoom.Error: User with id {} not found", request.getStudentId());
-                    return new UserNotFoundException("User not found");
-                });
-
-        if (student.getRole() != Role.STUDENT) {
-            log.error("RoomService.addStudentToRoom.Error: User with role {} is not a student", student.getRole().toString());
-            throw new IllegalArgumentException("User is not a student");
-        }
-
-        if (roomStudentRepository.existsByRoomIdAndStudentId(room.getId(), student.getId())) {
-            log.error("RoomService.addStudentToRoom.Error: Room with id {} already exists with student {}", room.getId(), student.getId());
-            throw new RoomStudentAlreadyExistsException("Student already added to room");
-        }
-
-        RoomStudent roomStudent = RoomStudent.builder()
-                .roomId(room.getId())
-                .studentId(student.getId())
-                .status(RoomStudentStatus.ACTIVE)
-                .attemptNo(1)
-                .build();
-
-        roomStudentRepository.save(roomStudent);
-        log.info("RoomService.addStudentToRoom.Success: Student was added to group successfully");
-        return toRoomStudentDto(roomStudent);
-    }
-
-    @Transactional
-    public void removeStudentFromRoom(UUID roomId,
-                                      UUID studentId,
-                                      Authentication authentication) {
-        Room room = getRoomById(roomId, authentication);
-        RoomStudent roomStudent = roomStudentRepository.findByRoomIdAndStudentId(room.getId(), studentId)
-                .orElseThrow(() -> new RoomNotFoundException("Room student not found"));
-
-        roomStudentRepository.delete(roomStudent);
+        roomRepository.delete(room);
+        log.info("RoomService.deleteRoom.Success: Room with id {} has been deleted", room.getId());
     }
 }

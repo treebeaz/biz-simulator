@@ -1,37 +1,36 @@
 --liquibase formatted sql
 
---changeset karim:rooms-1
-CREATE TABLE rooms
+--changeset karim:create-room-1
+CREATE TABLE room
 (
-    id                   UUID PRIMARY KEY        DEFAULT gen_random_uuid(),
-    teacher_id           UUID           NOT NULL,
-    group_id             UUID           NOT NULL,
+    id            UUID PRIMARY KEY      DEFAULT gen_random_uuid(),
+    teacher_id    UUID         NOT NULL,
 
-    room_name            VARCHAR(255)   NOT NULL,
-    business_type        VARCHAR(100)   NOT NULL,
-    status               VARCHAR(30)    NOT NULL,
-    initial_budget       NUMERIC(14, 2) NOT NULl,
+    name          VARCHAR(255) NOT NULL,
+    business_type VARCHAR(100) NOT NULL,
+    status        VARCHAR(30)  NOT NULL DEFAULT 'DRAFT',
+    max_turns     INT          NOT NULL DEFAULT 30,
+    join_code     VARCHAR(32)  NOT NULL UNIQUE,
 
-    start_day            INT            NOT NULL DEFAULT 1,
-    end_day              INT            NOT NULL DEFAULT 30,
-    day_duration_seconds INT            NOT NULL DEFAULT 30,
+    created_at    TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
 
-    created_at           TIMESTAMP               DEFAULT CURRENT_TIMESTAMP,
-    updated_at           TIMESTAMP               DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_rooms_teacher_id FOREIGN KEY (teacher_id) REFERENCES users (id),
-    CONSTRAINT fk_rooms_group_id FOREIGN KEY (group_id) REFERENCES groups (id)
+    CONSTRAINT fk_room_teacher_id FOREIGN KEY (teacher_id) REFERENCES users (id)
 );
 
---changeset karim:rooms-2
-CREATE TABLE room_rules
+--changeset karim:create-room--2
+CREATE TABLE room_participants
 (
-    room_id               UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-    rent_percent          NUMERIC(5, 4) NOT NULL DEFAULT 0.3000,
-    marketing_ref_percent NUMERIC(5, 4) NOT NULL DEFAULT 0.0200,
-    noise_min             NUMERIC(5, 4) NOT NULL DEFAULT 0.8500,
-    noise_max             NUMERIC(5, 4) NOT NULL DEFAULT 1.1500,
+    room_id UUID NOT NULL,
+    user_id UUID NOT NULL,
 
-    CONSTRAINT fk_room_rules_room FOREIGN KEY (room_id) REFERENCES rooms (id) ON DELETE CASCADE
+    current_step INT NOT NULL DEFAULT 0,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_room_participants_room FOREIGN KEY (room_id) REFERENCES room(id),
+    CONSTRAINT fk_room_participants_user FOREIGN KEY (user_id) REFERENCES users(id),
+
+    CONSTRAINT uk_room_user UNIQUE(room_id, user_id)
 );

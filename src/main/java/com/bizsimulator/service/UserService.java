@@ -3,12 +3,12 @@ package com.bizsimulator.service;
 import com.bizsimulator.dto.auth.RegistrationRequestDto;
 import com.bizsimulator.dto.user.UserResponseDto;
 import com.bizsimulator.dto.user.UserUpdateAccountRequestDto;
-import com.bizsimulator.entity.User;
-import com.bizsimulator.entity.UserProfile;
+import com.bizsimulator.entity.user.User;
+import com.bizsimulator.entity.user.UserProfile;
 import com.bizsimulator.exception.*;
 import com.bizsimulator.mapper.UserMapper;
-import com.bizsimulator.repository.UserProfileRepository;
-import com.bizsimulator.repository.UserRepository;
+import com.bizsimulator.repository.user.UserProfileRepository;
+import com.bizsimulator.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -67,7 +67,7 @@ public class UserService implements UserDetailsService {
     public User findByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> {
-                    log.error("UserService.findByUsername.error.InvalidUsername");
+                    log.error("UserService.findByUsername.Error: InvalidUsername");
                     return new InvalidUsernameException("Invalid username");
                 });
     }
@@ -81,7 +81,7 @@ public class UserService implements UserDetailsService {
 
     protected User getCurrentAuthenticationUser(Authentication authentication) {
         if (!(authentication.getPrincipal() instanceof UserDetails userDetails)) {
-            log.error("UserService.getCurrentAuthenticationUser.error.InvalidPrincipalTypeInAuthentication");
+            log.error("UserService.getCurrentAuthenticationUser.Error: InvalidPrincipalTypeInAuthentication");
             throw new InvalidAuthenticationException("Authentication type does not match with User");
         }
 
@@ -91,7 +91,7 @@ public class UserService implements UserDetailsService {
     public UserProfile findUserProfileByEmailOrUsername(User user) {
         return userProfileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> {
-                    log.error("UserService.findUserProfileByEmailOrUsername.error.UserDoesNotExist");
+                    log.error("UserService.findUserProfileByEmailOrUsername.Error: UserDoesNotExist");
                     return new UserNotFoundException("User not found");
                 });
     }
@@ -121,11 +121,11 @@ public class UserService implements UserDetailsService {
         }
 
         if (userRepository.existsByEmail(newEmail)) {
-            log.info("UserService.updateAccount.error.EmailAlreadyExists");
+            log.info("UserService.updateAccount.Error: EmailAlreadyExists");
             throw new UpdateUserAccountException("User with this email already exists");
         }
 
-        log.info("UserService.updateEmail.success");
+        log.info("UserService.updateEmail.Success");
         user.setEmail(newEmail);
     }
 
@@ -134,7 +134,7 @@ public class UserService implements UserDetailsService {
             return;
         }
 
-        log.info("UserService.updatePassword.success");
+        log.info("UserService.updatePassword.Success");
         user.setPassword(passwordEncoder.encode(newPassword));
     }
 

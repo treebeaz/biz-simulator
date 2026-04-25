@@ -1,14 +1,13 @@
 package com.bizsimulator.controller.rest;
 
-import com.bizsimulator.dto.room.AddRoomStudentRequestDto;
-import com.bizsimulator.dto.room.RoomRequestDto;
+import com.bizsimulator.dto.room.CreateRoomRequest;
+import com.bizsimulator.dto.room.JoinRoomByCodeRequest;
 import com.bizsimulator.dto.room.RoomResponseDto;
-import com.bizsimulator.dto.room.RoomStudentDto;
 import com.bizsimulator.service.RoomService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,54 +15,44 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
+@RequestMapping("api/rooms")
 @RequiredArgsConstructor
-@RequestMapping("/api/rooms")
-@PreAuthorize("hasRole('TEACHER')")
 public class RestRoomController {
     private final RoomService roomService;
 
-    @PostMapping
-    public ResponseEntity<RoomResponseDto> createRoom(@RequestBody RoomRequestDto roomRequestDto,
+    @PostMapping("/teacher/create")
+    public ResponseEntity<RoomResponseDto> createRoom(@Valid @RequestBody CreateRoomRequest request,
                                                       Authentication authentication) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(roomService.createRoom(roomRequestDto, authentication));
+        RoomResponseDto response = roomService.createRoom(request, authentication);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @GetMapping
-    public ResponseEntity<List<RoomResponseDto>> getAllRooms(Authentication authentication) {
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(roomService.getTeacherRooms(authentication));
+    @PostMapping("/student/join")
+    public ResponseEntity<RoomResponseDto> joinRoomByCode(@Valid @RequestBody JoinRoomByCodeRequest request,
+                                                          Authentication authentication) {
+        RoomResponseDto response = roomService.joinRoomByCode(request, authentication);
+        return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping("/{roomId}")
+    @GetMapping("/teacher/check-rooms")
+    public ResponseEntity<List<RoomResponseDto>> checkRooms(Authentication authentication) {
+        List<RoomResponseDto> responseList = roomService.getAllRoomByTeacher(authentication);
+        return ResponseEntity.ok(responseList);
+    }
+
+    @PostMapping("/teacher/{roomId}/delete")
     public ResponseEntity<Void> deleteRoom(@PathVariable UUID roomId,
                                            Authentication authentication) {
         roomService.deleteRoom(roomId, authentication);
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/{roomId}/students")
-    @PreAuthorize("hasRole('TEACHER')")
-    public ResponseEntity<List<RoomStudentDto>> getRoomStudents(@PathVariable UUID roomId,
-                                                                Authentication authentication) {
-        return ResponseEntity.ok(roomService.getRoomStudents(roomId, authentication));
+    @GetMapping("/{roomId}/participants")
+    public ResponseEntity<?> getRoomParticipants(@PathVariable UUID roomId,
+                                                 Authentication authentication) {
+        // вынести в отдельный сервис RoomParticipantService
+        return ResponseEntity.ok("Список участников – будет реализовано");
     }
 
-    @PostMapping("/{roomId}/students")
-    @PreAuthorize("hasRole('TEACHER')")
-    public ResponseEntity<RoomStudentDto> addRoomStudent(@PathVariable UUID roomId,
-                                                         @RequestBody AddRoomStudentRequestDto request,
-                                                         Authentication authentication) {
-        RoomStudentDto response = roomService.addStudentToRoom(roomId, request, authentication);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
 
-    @PostMapping("/{roomId}/students/{studentId}")
-    @PreAuthorize("hasRole('TEACHER')")
-    public ResponseEntity<Void> removeRoomStudent(@PathVariable UUID roomId,
-                                                  @PathVariable UUID studentId,
-                                                  Authentication authentication) {
-        roomService.removeStudentFromRoom(roomId, studentId, authentication);
-        return ResponseEntity.noContent().build();
-    }
 }

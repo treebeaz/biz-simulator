@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Моя комната</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/profile.css">
+</head>
+<body class="profile-page">
+<nav class="navbar navbar-expand-lg navbar-light bg-light" id="mainNavbar">
+    <div class="container">
+        <a class="navbar-brand" href="/">Бизнес-симулятор</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto" id="navbarMenu"></ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4" id="studentRoomRoot">
+    <div id="message" class="alert alert-dismissible fade show d-none" role="alert">
+        <span id="messageText"></span>
+        <button type="button" class="btn-close" onclick="hideMessage()"></button>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light"><h5 class="mb-0">Вступить в комнату</h5></div>
+                <div class="card-body">
+                    <label for="joinRoomCodeInput" class="form-label">Код комнаты</label>
+                    <input id="joinRoomCodeInput" class="form-control mb-3" placeholder="Введите код от преподавателя">
+                    <button class="btn btn-primary" type="button" onclick="joinRoomByCode()">
+                        <i class="bi bi-box-arrow-in-right"></i> Вступить
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light"><h5 class="mb-0">Комната для игры</h5></div>
+                <div class="card-body" id="studentRoomLastInfo">
+                    Подключитесь по коду, чтобы увидеть комнату.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mt-3">
+        <div class="card-body d-flex flex-wrap gap-2 align-items-center justify-content-between">
+            <div class="text-muted small" id="studentRoomGameHint">
+                После подключения нажмите «Начать игру».
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-success" type="button" onclick="startGameFromRoom()">
+                    <i class="bi bi-play-fill"></i> Начать игру
+                </button>
+                <button class="btn btn-outline-primary" type="button" onclick="openSimulationFromRoom()">
+                    <i class="bi bi-joystick"></i> Открыть симуляцию
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/index.js"></script>
+<script src="/js/profile.js"></script>
+</body>
+</html>

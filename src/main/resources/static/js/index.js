@@ -21,7 +21,7 @@ function updateNavigation(token, username, userRole) {
                 </li>
                 <li>
                     <a class="dropdown-item" href="/pages/teacher-rooms.html">
-                        <i class="bi bi-building"></i> Комнаты
+                        <i class="bi bi-building"></i> Мои комнаты
                     </a>
                 </li>
             `
@@ -35,8 +35,8 @@ function updateNavigation(token, username, userRole) {
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item" href="/pages/student-sim-room.html">
-                        <i class="bi bi-graph-up-arrow"></i> Моя симуляция
+                    <a class="dropdown-item" href="/pages/student-room.html">
+                        <i class="bi bi-door-open"></i> Моя комната
                     </a>
                 </li>
             `

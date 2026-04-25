@@ -3,20 +3,16 @@ package com.bizsimulator.dto.room;
 import lombok.Builder;
 import lombok.Value;
 
-import java.math.BigDecimal;
-
 @Value
 @Builder
 public class RoomResponseDto {
-    String roomId;
-    String teacherId;
-    String groupId;
-    String roomName;
+    String id;
+    String name;
     String businessType;
-    String roomStatus;
-    BigDecimal initialBudget;
-    Integer startDay;
-    Integer endDay;
-    Integer duration;
-    RoomRulesDto roomRules;
+    String status;
+    Integer maxTurns;
+    String joinCode;  // Должно быть null при запросе от студентов
+    String teacherId;
+    String teacherName;
+    Integer participantsCount;
 }

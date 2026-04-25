@@ -1,16 +1,14 @@
 package com.bizsimulator.util;
 
-import com.bizsimulator.entity.User;
-import com.bizsimulator.entity.UserProfile;
+import com.bizsimulator.entity.user.User;
+import com.bizsimulator.entity.user.UserProfile;
 import com.bizsimulator.exception.UserNotFoundException;
-import com.bizsimulator.repository.UserProfileRepository;
-import com.bizsimulator.service.UserService;
+import com.bizsimulator.repository.user.UserProfileRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;

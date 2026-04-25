@@ -1,15 +1,15 @@
 package com.bizsimulator.service;
 
 import com.bizsimulator.dto.group.*;
-import com.bizsimulator.entity.Group;
-import com.bizsimulator.entity.GroupStudent;
-import com.bizsimulator.entity.User;
-import com.bizsimulator.entity.UserProfile;
+import com.bizsimulator.entity.group.Group;
+import com.bizsimulator.entity.group.GroupStudent;
+import com.bizsimulator.entity.user.User;
+import com.bizsimulator.entity.user.UserProfile;
 import com.bizsimulator.exception.GroupNotFoundException;
 import com.bizsimulator.exception.StudentAlreadyInGroupException;
 import com.bizsimulator.exception.StudentNotFoundException;
-import com.bizsimulator.repository.GroupRepository;
-import com.bizsimulator.repository.GroupStudentRepository;
+import com.bizsimulator.repository.group.GroupRepository;
+import com.bizsimulator.repository.group.GroupStudentRepository;
 import com.bizsimulator.util.JoinCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @RequiredArgsConstructor
