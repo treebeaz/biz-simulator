@@ -6,6 +6,7 @@ import com.bizsimulator.dto.room.RoomResponseDto;
 import com.bizsimulator.entity.enums.Status;
 import com.bizsimulator.entity.room.Room;
 import com.bizsimulator.entity.room.RoomParticipant;
+import com.bizsimulator.entity.room.RoomSettings;
 import com.bizsimulator.entity.user.User;
 import com.bizsimulator.exception.room.RoomByJoinCodeNotFoundException;
 import com.bizsimulator.exception.room.RoomNotFoundException;
@@ -42,6 +43,7 @@ public class RoomService {
     private final RoomParticipantRepository roomParticipantRepository;
 
     private final UserService userService;
+    private final RoomSettingsService roomSettingsService;
     private final JoinCodeGenerator joinCodeGenerator;
 
     private final RoomMapper roomMapper;
@@ -52,7 +54,9 @@ public class RoomService {
                                       Authentication authentication) {
         User teacher = userService.getCurrentAuthenticationUser(authentication);
         Room room = buildDefaultRoomEntity(request, teacher.getId());
+
         Room savedRoom = roomRepository.save(room);
+        roomSettingsService.createCoffeeShopSettings(savedRoom.getId(), request.getStartCash());
 
         log.info("Room with id {} has been created", savedRoom.getId());
         return roomMapper.toRoomResponseDto(savedRoom, IS_TEACHER_TRUE);

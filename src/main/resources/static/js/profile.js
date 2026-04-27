@@ -6,9 +6,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const teacherRoomCreateRoot = document.getElementById('teacherRoomCreateRoot');
     const teacherRoomsListRoot = document.getElementById('teacherRoomsListRoot');
     const teacherRoomParticipantsRoot = document.getElementById('teacherRoomParticipantsRoot');
+    const teacherRoomSettingsRoot = document.getElementById('teacherRoomSettingsRoot');
     const studentRoomRoot = document.getElementById('studentRoomRoot');
 
-    if (teacherRoomCreateRoot || teacherRoomsListRoot || teacherRoomParticipantsRoot) {
+    if (teacherRoomCreateRoot || teacherRoomsListRoot || teacherRoomParticipantsRoot || teacherRoomSettingsRoot) {
         if (role !== 'TEACHER') {
             window.location.href = '/profile';
             return;
@@ -18,6 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (teacherRoomParticipantsRoot) {
             loadRoomParticipantsPlaceholder();
+        }
+        if (teacherRoomSettingsRoot) {
+            loadTeacherRoomSettings();
         }
         return;
     }
@@ -437,6 +441,7 @@ function renderRoomCard(room) {
     html += '<div class="small"><strong>Преподаватель:</strong> ' + teacherName + '</div>';
     html += '<div class="small"><strong>Код комнаты:</strong> <code>' + joinCode + '</code></div>';
     html += '<div class="d-flex gap-2 mt-3">';
+    html += '<a class="btn btn-sm btn-outline-secondary" href="/pages/teacher-room-settings.html?roomId=' + encodeURIComponent(id) + '">Настройки</a>';
     html += '<a class="btn btn-sm btn-outline-primary" href="/pages/teacher-room-participants.html?roomId=' + encodeURIComponent(id) + '">Участники</a>';
     html += '<button class="btn btn-sm btn-outline-danger" type="button" onclick="deleteTeacherRoom(\'' + id + '\')">Удалить</button>';
     html += '</div>';
@@ -449,13 +454,20 @@ async function createRoomByTeacher() {
     if (!checkAuth()) return;
     const nameInput = document.getElementById('roomNameInput');
     const businessTypeSelect = document.getElementById('roomBusinessTypeSelect');
+    const startCashInput = document.getElementById('roomStartCashInput');
     const info = document.getElementById('createdRoomInfo');
-    if (!nameInput || !businessTypeSelect) return;
+    if (!nameInput || !businessTypeSelect || !startCashInput) return;
 
     const name = (nameInput.value || '').trim();
     const businessType = (businessTypeSelect.value || '').trim() || 'COFFEE_SHOP';
+    const startCashRaw = (startCashInput.value || '').trim();
+    const startCash = parseFloat(startCashRaw);
     if (!name) {
         showMessage('Введите название комнаты', 'danger');
+        return;
+    }
+    if (!startCashRaw || Number.isNaN(startCash) || startCash <= 0) {
+        showMessage('Укажите корректный стартовый капитал (больше 0)', 'danger');
         return;
     }
 
@@ -463,7 +475,11 @@ async function createRoomByTeacher() {
         const response = await fetch('/api/rooms/teacher/create', {
             method: 'POST',
             headers: getAuthHeaders(),
-            body: JSON.stringify({ name: name, businessType: businessType })
+            body: JSON.stringify({
+                name: name,
+                businessType: businessType,
+                startCash: startCash
+            })
         });
 
         if (!response.ok) {
@@ -477,7 +493,8 @@ async function createRoomByTeacher() {
         if (info) {
             info.classList.remove('d-none');
             info.innerHTML = '<strong>Комната:</strong> ' + (room.name || '—') +
-                '<br><strong>Код:</strong> <code>' + (room.joinCode || '—') + '</code>';
+                '<br><strong>Код:</strong> <code>' + (room.joinCode || '—') + '</code>' +
+                '<br><strong>Стартовый капитал:</strong> ' + startCash.toFixed(2);
         }
         nameInput.value = '';
     } catch (e) {
@@ -659,5 +676,113 @@ function openSimulationFromRoom() {
         return;
     }
     showMessage('Экран симуляции будет открыт после подключения модуля симуляции.', 'info');
+}
+
+function getCurrentRoomIdFromQuery() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('roomId');
+}
+
+function setRoomSettingsFormValues(settings) {
+    const mapping = [
+        ['startCashInput', settings.startCash],
+        ['startStockInput', settings.startStock],
+        ['startStaffInput', settings.startStaff],
+        ['startCostInput', settings.startCost],
+        ['baseDemandInput', settings.baseDemand],
+        ['avgPriceInput', settings.avgPrice],
+        ['elasticityInput', settings.elasticity],
+        ['marketingEfficiencyInput', settings.marketingEfficiency],
+        ['fixedCostInput', settings.fixedCost],
+        ['salaryPerStaffInput', settings.salaryPerStaff],
+        ['eventProbabilityInput', settings.eventProbability]
+    ];
+
+    mapping.forEach(function(pair) {
+        const element = document.getElementById(pair[0]);
+        if (!element) return;
+        element.value = pair[1] ?? '';
+    });
+}
+
+function parseNumberInput(id, integerOnly) {
+    const element = document.getElementById(id);
+    if (!element) return null;
+    const value = (element.value || '').trim();
+    if (!value) return null;
+    const parsed = integerOnly ? parseInt(value, 10) : parseFloat(value);
+    if (Number.isNaN(parsed)) {
+        throw new Error('Некорректное значение поля: ' + id);
+    }
+    return parsed;
+}
+
+function collectRoomSettingsUpdatePayload() {
+    return {
+        startStock: parseNumberInput('startStockInput', true),
+        startStaff: parseNumberInput('startStaffInput', false),
+        startCost: parseNumberInput('startCostInput', false),
+        baseDemand: parseNumberInput('baseDemandInput', true),
+        avgPrice: parseNumberInput('avgPriceInput', false),
+        elasticity: parseNumberInput('elasticityInput', false),
+        marketingEfficiency: parseNumberInput('marketingEfficiencyInput', false),
+        fixedCost: parseNumberInput('fixedCostInput', false),
+        salaryPerStaff: parseNumberInput('salaryPerStaffInput', false),
+        eventProbability: parseNumberInput('eventProbabilityInput', false)
+    };
+}
+
+async function loadTeacherRoomSettings() {
+    if (!checkAuth()) return;
+    const roomId = getCurrentRoomIdFromQuery();
+    const roomIdEl = document.getElementById('roomSettingsRoomId');
+    if (roomIdEl) roomIdEl.textContent = roomId || '—';
+    if (!roomId) {
+        showMessage('roomId не указан в URL', 'danger');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/rooms/' + roomId + '/settings', {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(function() { return {}; });
+            showMessage(err.message || 'Не удалось загрузить настройки комнаты', 'danger');
+            return;
+        }
+        const settings = await response.json();
+        setRoomSettingsFormValues(settings);
+    } catch (e) {
+        showMessage('Ошибка при загрузке настроек комнаты', 'danger');
+    }
+}
+
+async function saveTeacherRoomSettings() {
+    if (!checkAuth()) return;
+    const roomId = getCurrentRoomIdFromQuery();
+    if (!roomId) {
+        showMessage('roomId не указан в URL', 'danger');
+        return;
+    }
+
+    try {
+        const payload = collectRoomSettingsUpdatePayload();
+        const response = await fetch('/api/rooms/' + roomId + '/settings', {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(function() { return {}; });
+            showMessage(err.message || 'Не удалось сохранить настройки', 'danger');
+            return;
+        }
+        const updated = await response.json();
+        setRoomSettingsFormValues(updated);
+        showMessage('Настройки комнаты сохранены', 'success');
+    } catch (e) {
+        showMessage('Проверьте заполнение полей настроек', 'danger');
+    }
 }
 

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройки комнаты</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/profile.css">
+</head>
+<body class="profile-page">
+<nav class="navbar navbar-expand-lg navbar-light bg-light" id="mainNavbar">
+    <div class="container">
+        <a class="navbar-brand" href="/">Бизнес-симулятор</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto" id="navbarMenu"></ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4" id="teacherRoomSettingsRoot">
+    <div id="message" class="alert alert-dismissible fade show d-none" role="alert">
+        <span id="messageText"></span>
+        <button type="button" class="btn-close" onclick="hideMessage()"></button>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-1">Настройки комнаты</h4>
+            <div class="small text-muted">Room ID: <span id="roomSettingsRoomId">—</span></div>
+        </div>
+        <a class="btn btn-outline-secondary" href="/pages/teacher-rooms-list.html">К списку комнат</a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form id="roomSettingsForm" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label" for="startCashInput">Стартовый капитал</label>
+                    <input type="number" step="0.01" min="0" id="startCashInput" class="form-control" readonly>
+                    <div class="form-text">Изменяется на бэкенде при создании комнаты.</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="startStockInput">Стартовый склад</label>
+                    <input type="number" step="1" min="0" id="startStockInput" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="startStaffInput">Стартовый персонал</label>
+                    <input type="number" step="0.01" min="0.01" id="startStaffInput" class="form-control">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label" for="startCostInput">Стартовая себестоимость</label>
+                    <input type="number" step="0.01" min="0" id="startCostInput" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="baseDemandInput">Базовый спрос</label>
+                    <input type="number" step="1" min="0" id="baseDemandInput" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="avgPriceInput">Средняя цена рынка</label>
+                    <input type="number" step="0.01" min="0.01" id="avgPriceInput" class="form-control">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label" for="elasticityInput">Эластичность</label>
+                    <input type="number" step="0.01" min="0.01" id="elasticityInput" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="marketingEfficiencyInput">Эффективность маркетинга</label>
+                    <input type="number" step="0.01" min="0" id="marketingEfficiencyInput" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="fixedCostInput">Постоянные расходы</label>
+                    <input type="number" step="0.01" min="0" id="fixedCostInput" class="form-control">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label" for="salaryPerStaffInput">Зарплата на 1 персонал</label>
+                    <input type="number" step="0.01" min="0" id="salaryPerStaffInput" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="eventProbabilityInput">Вероятность события (0..1)</label>
+                    <input type="number" step="0.01" min="0" max="1" id="eventProbabilityInput" class="form-control">
+                </div>
+
+                <div class="col-12 d-flex gap-2 mt-2">
+                    <button type="button" class="btn btn-primary" onclick="saveTeacherRoomSettings()">
+                        <i class="bi bi-save"></i> Сохранить
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="loadTeacherRoomSettings()">
+                        <i class="bi bi-arrow-clockwise"></i> Обновить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/index.js"></script>
+<script src="/js/profile.js"></script>
+</body>
+</html>
