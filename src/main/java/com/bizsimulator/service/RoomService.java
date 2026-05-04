@@ -43,6 +43,7 @@ public class RoomService {
     private final RoomParticipantRepository roomParticipantRepository;
 
     private final UserService userService;
+    private final SimulationService simulationService;
     private final RoomSettingsService roomSettingsService;
     private final JoinCodeGenerator joinCodeGenerator;
 
@@ -93,6 +94,8 @@ public class RoomService {
 
         RoomParticipant roomParticipant = buildRoomParticipantEntity(room.getId(), student.getId());
         roomParticipantRepository.save(roomParticipant);
+
+        simulationService.initGameState(roomParticipant.getId());
 
         log.info("RoomService.joinRoomByCode.Success: Student joined to the room with id {}", room.getId());
         return roomMapper.toRoomResponseDto(room, IS_TEACHER_FALSE);

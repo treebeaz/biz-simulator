@@ -39,6 +39,11 @@ function updateNavigation(token, username, userRole) {
                         <i class="bi bi-door-open"></i> Моя комната
                     </a>
                 </li>
+                <li>
+                    <a class="dropdown-item" href="/pages/student-simulation.html">
+                        <i class="bi bi-controller"></i> Симуляция
+                    </a>
+                </li>
             `
             : '';
 

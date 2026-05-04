@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const teacherRoomParticipantsRoot = document.getElementById('teacherRoomParticipantsRoot');
     const teacherRoomSettingsRoot = document.getElementById('teacherRoomSettingsRoot');
     const studentRoomRoot = document.getElementById('studentRoomRoot');
+    const studentSimulationRoot = document.getElementById('studentSimulationRoot');
 
     if (teacherRoomCreateRoot || teacherRoomsListRoot || teacherRoomParticipantsRoot || teacherRoomSettingsRoot) {
         if (role !== 'TEACHER') {
@@ -32,6 +33,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         renderStudentLastJoinedRoom();
+        return;
+    }
+
+    if (studentSimulationRoot) {
+        if (role !== 'STUDENT') {
+            window.location.href = '/profile';
+            return;
+        }
+        initStudentSimulationPage();
         return;
     }
 
@@ -662,11 +672,7 @@ function startGameFromRoom() {
         showMessage('Сначала подключитесь к комнате по коду', 'warning');
         return;
     }
-    const hint = document.getElementById('studentRoomGameHint');
-    if (hint) {
-        hint.textContent = 'Запуск игры доступен после подключения модуля симуляции.';
-    }
-    showMessage('Комната готова. Следующий шаг — запуск симуляции.', 'success');
+    window.location.href = '/pages/student-simulation.html';
 }
 
 function openSimulationFromRoom() {
@@ -675,7 +681,7 @@ function openSimulationFromRoom() {
         showMessage('Сначала подключитесь к комнате по коду', 'warning');
         return;
     }
-    showMessage('Экран симуляции будет открыт после подключения модуля симуляции.', 'info');
+    window.location.href = '/pages/student-simulation.html';
 }
 
 function getCurrentRoomIdFromQuery() {
@@ -783,6 +789,511 @@ async function saveTeacherRoomSettings() {
         showMessage('Настройки комнаты сохранены', 'success');
     } catch (e) {
         showMessage('Проверьте заполнение полей настроек', 'danger');
+    }
+}
+
+// =========================
+// STUDENT: simulation page
+// =========================
+
+var SIM_DAY_MS = 30000;
+
+/** Автопрогон: 1 день = 30 с, кнопки Начать / Пауза / Закончить */
+var simAuto = {
+    active: false,
+    paused: false,
+    nextTurnAt: 0,
+    pausedRemainingMs: 0,
+    intervalId: null,
+    turnInFlight: false
+};
+
+function getStudentSimulationRoom() {
+    const raw = localStorage.getItem('lastJoinedRoom');
+    if (!raw) return null;
+    try {
+        return JSON.parse(raw);
+    } catch (e) {
+        return null;
+    }
+}
+
+function getSimulationSessionKey(roomId) {
+    return 'simSession:' + roomId;
+}
+
+function mapFinishReasonRu(reason) {
+    const key = (reason || '').toString().toUpperCase();
+    if (key === 'MAX_TURN' || key === 'MAX_TURNS') return 'Достигнут максимум ходов';
+    if (key === 'BANKRUPT') return 'Банкротство';
+    return reason || '—';
+}
+
+function initSessionFromSettings(room, settings) {
+    return {
+        roomId: room.id,
+        roomName: room.name || 'Комната',
+        maxTurns: room.maxTurns != null ? Number(room.maxTurns) : 30,
+        step: 0,
+        cash: Number(settings.startCash ?? 0),
+        stock: Number(settings.startStock ?? 0),
+        staff: Number(settings.startStaff ?? 0),
+        cost: Number(settings.startCost ?? 0),
+        lastMarketing: 0,
+        gameFinished: false,
+        finishReason: null,
+        history: []
+    };
+}
+
+function persistSimulationSession(session) {
+    localStorage.setItem(getSimulationSessionKey(session.roomId), JSON.stringify(session));
+}
+
+function loadSimulationSession(roomId) {
+    const raw = localStorage.getItem(getSimulationSessionKey(roomId));
+    if (!raw) return null;
+    try {
+        return JSON.parse(raw);
+    } catch (e) {
+        return null;
+    }
+}
+
+function renderSimulationHeader(room, session) {
+    const roomNameEl = document.getElementById('simRoomName');
+    const roomMetaEl = document.getElementById('simRoomMeta');
+    if (roomNameEl) roomNameEl.textContent = room.name || 'Комната';
+    if (roomMetaEl) {
+        roomMetaEl.textContent =
+            'Тип: ' + mapBusinessTypeRu(room.businessType) +
+            ' · Статус: ' + mapRoomStatusRu(room.status) +
+            ' · Макс. ходов: ' + (room.maxTurns ?? '—');
+    }
+
+    const maxTurns = session.maxTurns != null ? Number(session.maxTurns) : (room.maxTurns != null ? Number(room.maxTurns) : 30);
+    const stepEl = document.getElementById('simStepValue');
+    const maxTurnsEl = document.getElementById('simMaxTurnsValue');
+    const cashEl = document.getElementById('simCashValue');
+    const stockEl = document.getElementById('simStockValue');
+    const staffEl = document.getElementById('simStaffValue');
+    const costEl = document.getElementById('simCostValue');
+    const stateEl = document.getElementById('simGameStateValue');
+    const lastMEl = document.getElementById('simLastMarketingDisplay');
+    const nextDayEl = document.getElementById('simNextDayLabel');
+    const hintEl = document.getElementById('simTurnHint');
+
+    const done = Number(session.step ?? 0);
+    if (stepEl) stepEl.textContent = String(done);
+    if (maxTurnsEl) maxTurnsEl.textContent = String(maxTurns);
+
+    if (cashEl) cashEl.textContent = Number(session.cash ?? 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (stockEl) stockEl.textContent = String(session.stock ?? 0);
+    if (staffEl) staffEl.textContent = Number(session.staff ?? 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 });
+    if (costEl) costEl.textContent = Number(session.cost ?? 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (stateEl) stateEl.textContent = session.gameFinished ? ('Игра завершена: ' + mapFinishReasonRu(session.finishReason)) : 'Идёт';
+
+    if (lastMEl) {
+        lastMEl.textContent = Number(session.lastMarketing ?? 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    if (nextDayEl) {
+        if (session.gameFinished) {
+            nextDayEl.textContent = '—';
+        } else {
+            nextDayEl.textContent = String(done + 1);
+        }
+    }
+    if (hintEl) {
+        if (session.gameFinished) {
+            hintEl.textContent = 'Игра окончена, новые ходы недоступны.';
+        } else {
+            hintEl.textContent = 'Спрос в модели зависит от m прошлого дня — смотрите значение выше перед выбором m_t.';
+        }
+    }
+}
+
+function renderSimulationHistory(session) {
+    const wrap = document.getElementById('simHistoryWrap');
+    if (!wrap) return;
+    const list = Array.isArray(session.history) ? session.history : [];
+    if (list.length === 0) {
+        wrap.innerHTML = '<span class="text-muted">Ходов пока нет.</span>';
+        return;
+    }
+
+    let html = '<div class="table-responsive"><table class="table table-sm table-striped">';
+    html += '<thead><tr><th>День</th><th>p</th><th>q</th><th>m</th><th>h</th><th>Спрос</th><th>Продажи</th><th>Выручка</th><th>Затраты</th><th>Прибыль</th><th>Касса</th><th>Склад</th></tr></thead><tbody>';
+    list.slice().reverse().forEach(function(turn) {
+        html += '<tr>';
+        html += '<td>' + (turn.step ?? '—') + '</td>';
+        html += '<td class="text-muted small">' + (turn.price != null ? Number(turn.price).toFixed(2) : '—') + '</td>';
+        html += '<td class="text-muted small">' + (turn.purchaseQuantity != null ? turn.purchaseQuantity : '—') + '</td>';
+        html += '<td class="text-muted small">' + (turn.marketingExpense != null ? Number(turn.marketingExpense).toFixed(2) : '—') + '</td>';
+        html += '<td class="text-muted small">' + (turn.staffChange != null ? Number(turn.staffChange).toFixed(2) : '—') + '</td>';
+        html += '<td>' + (turn.demand ?? '—') + '</td>';
+        html += '<td>' + (turn.sales ?? '—') + '</td>';
+        html += '<td>' + Number(turn.revenue ?? 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>';
+        html += '<td>' + Number(turn.totalCost ?? 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>';
+        html += '<td>' + Number(turn.profit ?? 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>';
+        html += '<td>' + Number(turn.cashAfter ?? 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '</td>';
+        html += '<td>' + (turn.stockAfter ?? '—') + '</td>';
+        html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+    wrap.innerHTML = html;
+}
+
+function fmtNumRu(v, minFd, maxFd) {
+    if (v === null || v === undefined || v === '') return '—';
+    const n = Number(v);
+    if (!Number.isFinite(n)) return '—';
+    return n.toLocaleString('ru-RU', {
+        minimumFractionDigits: minFd != null ? minFd : 0,
+        maximumFractionDigits: maxFd != null ? maxFd : 2
+    });
+}
+
+function fillSimulationSettings(settings) {
+    const el = document.getElementById('simSettingsInfo');
+    if (!el) return;
+
+    var rows = [
+        {
+            name: 'Базовый спрос',
+            symHtml: 'D<sub>0</sub>',
+            val: fmtNumRu(settings.baseDemand, 0, 0),
+            hint: 'Масштаб спроса до влияния цены, маркетинга и персонала.'
+        },
+        {
+            name: 'Среднерыночная цена',
+            symHtml: 'p<sub>avg</sub>',
+            val: fmtNumRu(settings.avgPrice, 2, 2),
+            hint: 'Ориентир для ценовой эластичности: при p = p<sub>avg</sub> множитель цены равен 1.'
+        },
+        {
+            name: 'Ценовая эластичность',
+            symHtml: 'β',
+            val: fmtNumRu(settings.elasticity, 2, 2),
+            hint: 'Чем выше β, тем сильнее спрос реагирует на отклонение цены от рынка.'
+        },
+        {
+            name: 'Эффективность маркетинга',
+            symHtml: 'α',
+            val: fmtNumRu(settings.marketingEfficiency, 2, 4),
+            hint: 'Вес в формуле 1 + α·ln(1 + m), m — расходы прошлого периода.'
+        },
+        {
+            name: 'Постоянные расходы за период',
+            symHtml: 'F<sub>fixed</sub>',
+            val: fmtNumRu(settings.fixedCost, 2, 2),
+            hint: 'Аренда, коммунальные и т.п., не зависят от объёма продаж.'
+        },
+        {
+            name: 'Ставка на единицу персонала',
+            symHtml: 'w',
+            val: fmtNumRu(settings.salaryPerStaff, 2, 2),
+            hint: 'Затраты на персонал за период: w·L (L — текущий уровень эффективности).'
+        },
+        {
+            name: 'Себестоимость единицы на старте',
+            symHtml: 'c<sub>0</sub>',
+            val: fmtNumRu(settings.startCost, 2, 2),
+            hint: 'Начальное значение c<sub>t</sub>; в модели может меняться событиями.'
+        },
+        {
+            name: 'Вероятность случайного события',
+            symHtml: 'p<sub>event</sub>',
+            val: settings.eventProbability != null
+                ? (Number(settings.eventProbability).toLocaleString('ru-RU', { style: 'percent', minimumFractionDigits: 0, maximumFractionDigits: 1 }))
+                : '—',
+            hint: 'Зарезервировано под динамические события (поставщик, поломка и т.д.).'
+        }
+    ];
+
+    var html = '<div class="table-responsive"><table class="table table-sm mb-0 align-middle">';
+    html += '<thead class="table-light"><tr><th>Параметр</th><th>В формулах</th><th class="text-end">Значение</th><th>Зачем студенту</th></tr></thead><tbody>';
+    rows.forEach(function (r) {
+        html += '<tr><td>' + r.name + '</td><td><code>' + r.symHtml + '</code></td><td class="text-end fw-semibold">' + r.val + '</td><td class="text-muted">' + r.hint + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+    el.innerHTML = html;
+}
+
+function simulationAutoClearInterval() {
+    if (simAuto.intervalId) {
+        clearInterval(simAuto.intervalId);
+        simAuto.intervalId = null;
+    }
+}
+
+function simulationAutoUpdateUi() {
+    var start = document.getElementById('simBtnAutoStart');
+    var pause = document.getElementById('simBtnAutoPause');
+    var stop = document.getElementById('simBtnAutoStop');
+    var badge = document.getElementById('simAutoStatusBadge');
+    if (start) start.disabled = simAuto.active;
+    if (pause) pause.disabled = !simAuto.active;
+    if (stop) stop.disabled = !simAuto.active;
+    if (pause) {
+        if (simAuto.active && simAuto.paused) {
+            pause.innerHTML = '<i class="bi bi-play-fill"></i> Продолжить';
+        } else {
+            pause.innerHTML = '<i class="bi bi-pause-fill"></i> Пауза';
+        }
+    }
+    if (badge) {
+        if (!simAuto.active) {
+            badge.className = 'badge bg-secondary';
+            badge.textContent = 'Выключено';
+        } else if (simAuto.paused) {
+            badge.className = 'badge bg-warning text-dark';
+            badge.textContent = 'Пауза';
+        } else {
+            badge.className = 'badge bg-success';
+            badge.textContent = 'Идёт';
+        }
+    }
+}
+
+function simulationAutoTick() {
+    var cd = document.getElementById('simAutoCountdown');
+    if (!simAuto.active) return;
+    if (simAuto.paused) {
+        if (cd) cd.textContent = 'На паузе';
+        return;
+    }
+    var ms = simAuto.nextTurnAt - Date.now();
+    if (ms <= 0) {
+        simAutoFireTurn();
+        return;
+    }
+    if (cd) cd.textContent = 'Следующий автоматический ход через ' + Math.ceil(ms / 1000) + ' с';
+}
+
+function simulationAutoStop() {
+    simAuto.active = false;
+    simAuto.paused = false;
+    simAuto.pausedRemainingMs = 0;
+    simAuto.turnInFlight = false;
+    simulationAutoClearInterval();
+    var cd = document.getElementById('simAutoCountdown');
+    if (cd) cd.textContent = '—';
+    simulationAutoUpdateUi();
+}
+
+function simulationAutoStart() {
+    if (!checkAuth()) return;
+    var room = getStudentSimulationRoom();
+    if (!room || !room.id) {
+        showMessage('Сначала вступите в комнату', 'warning');
+        return;
+    }
+    var session = loadSimulationSession(room.id);
+    if (!session) {
+        showMessage('Сессия не инициализирована. Обновите страницу.', 'danger');
+        return;
+    }
+    if (session.gameFinished) {
+        showMessage('Игра уже завершена', 'warning');
+        return;
+    }
+    simulationAutoStop();
+    simAuto.active = true;
+    simAuto.paused = false;
+    simAuto.nextTurnAt = Date.now() + SIM_DAY_MS;
+    simAuto.intervalId = setInterval(simulationAutoTick, 250);
+    simulationAutoUpdateUi();
+    simulationAutoTick();
+    showMessage('Автодни запущены: каждые 30 секунд отправляется ход с текущими значениями формы.', 'success');
+}
+
+function simulationAutoPauseResume() {
+    if (!simAuto.active) return;
+    if (!simAuto.paused) {
+        simAuto.paused = true;
+        simAuto.pausedRemainingMs = Math.max(0, simAuto.nextTurnAt - Date.now());
+    } else {
+        simAuto.paused = false;
+        simAuto.nextTurnAt = Date.now() + (simAuto.pausedRemainingMs > 0 ? simAuto.pausedRemainingMs : SIM_DAY_MS);
+    }
+    simulationAutoUpdateUi();
+    simulationAutoTick();
+}
+
+async function simAutoFireTurn() {
+    if (!simAuto.active || simAuto.paused || simAuto.turnInFlight) return;
+    simAuto.turnInFlight = true;
+    try {
+        var room = getStudentSimulationRoom();
+        if (!room || !room.id) {
+            simulationAutoStop();
+            return;
+        }
+        var session = loadSimulationSession(room.id);
+        if (!session || session.gameFinished) {
+            simulationAutoStop();
+            return;
+        }
+
+        var res = await submitSimulationTurn({ showSuccess: false });
+        if (!res.ok) {
+            showMessage(res.error || 'Автоход не выполнен', 'danger');
+            simulationAutoStop();
+            return;
+        }
+        if (res.session.gameFinished) {
+            showMessage('Игра завершена: ' + mapFinishReasonRu(res.session.finishReason), 'warning');
+            simulationAutoStop();
+            return;
+        }
+        simAuto.nextTurnAt = Date.now() + SIM_DAY_MS;
+        simulationAutoTick();
+    } finally {
+        simAuto.turnInFlight = false;
+    }
+}
+
+async function initStudentSimulationPage() {
+    simulationAutoStop();
+
+    const room = getStudentSimulationRoom();
+    const empty = document.getElementById('simEmptyState');
+    const content = document.getElementById('simMainContent');
+    if (!room || !room.id) {
+        if (empty) empty.classList.remove('d-none');
+        if (content) content.classList.add('d-none');
+        return;
+    }
+    if (empty) empty.classList.add('d-none');
+    if (content) content.classList.remove('d-none');
+
+    try {
+        const response = await fetch('/api/rooms/' + room.id + '/settings', {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) {
+            showMessage('Не удалось загрузить настройки комнаты', 'danger');
+            return;
+        }
+        const settings = await response.json();
+        fillSimulationSettings(settings);
+
+        let session = loadSimulationSession(room.id);
+        if (!session) {
+            session = initSessionFromSettings(room, settings);
+            persistSimulationSession(session);
+        } else if (session.maxTurns == null && room.maxTurns != null) {
+            session.maxTurns = Number(room.maxTurns);
+            persistSimulationSession(session);
+        }
+        renderSimulationHeader(room, session);
+        renderSimulationHistory(session);
+    } catch (e) {
+        showMessage('Ошибка при инициализации симуляции', 'danger');
+    }
+}
+
+function readSimulationDecision() {
+    const price = parseFloat((document.getElementById('simPriceInput')?.value || '').trim());
+    const purchaseQuantity = parseInt((document.getElementById('simPurchaseInput')?.value || '').trim(), 10);
+    const marketingExpense = parseFloat((document.getElementById('simMarketingInput')?.value || '').trim());
+    const staffChange = parseFloat((document.getElementById('simStaffChangeInput')?.value || '').trim());
+
+    if (!Number.isFinite(price) || price <= 0) throw new Error('Цена должна быть больше 0');
+    if (!Number.isInteger(purchaseQuantity) || purchaseQuantity < 0) throw new Error('Закупка должна быть целым числом >= 0');
+    if (!Number.isFinite(marketingExpense) || marketingExpense < 0) throw new Error('Маркетинг должен быть >= 0');
+    if (!Number.isFinite(staffChange)) throw new Error('Изменение персонала заполнено некорректно');
+
+    return { price, purchaseQuantity, marketingExpense, staffChange };
+}
+
+/**
+ * @param {{ showSuccess?: boolean }} options
+ * @returns {Promise<{ ok: boolean, error?: string, session?: object, result?: object, room?: object, payload?: object }>}
+ */
+async function submitSimulationTurn(options) {
+    var showSuccess = !options || options.showSuccess !== false;
+
+    const room = getStudentSimulationRoom();
+    if (!room || !room.id) {
+        return { ok: false, error: 'Нет комнаты' };
+    }
+
+    let session = loadSimulationSession(room.id);
+    if (!session) {
+        return { ok: false, error: 'Сессия не инициализирована. Обновите страницу.' };
+    }
+    if (session.gameFinished) {
+        return { ok: false, error: 'Игра уже завершена: ' + mapFinishReasonRu(session.finishReason) };
+    }
+
+    let payload;
+    try {
+        payload = readSimulationDecision();
+    } catch (e) {
+        return { ok: false, error: e.message };
+    }
+
+    try {
+        const response = await fetch('/api/simulation/rooms/' + room.id + '/turn', {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(function() { return {}; });
+            return { ok: false, error: err.message || 'Не удалось выполнить ход' };
+        }
+
+        const result = await response.json();
+        session.step = result.step ?? session.step;
+        session.cash = Number(result.cashAfter ?? session.cash);
+        session.stock = Number(result.stockAfter ?? session.stock);
+        session.staff = Number(session.staff) + Number(payload.staffChange);
+        session.lastMarketing = Number(payload.marketingExpense);
+        session.gameFinished = !!result.gameFinished;
+        session.finishReason = result.finishReason || null;
+        session.history = Array.isArray(session.history) ? session.history : [];
+        session.history.push({
+            step: result.step,
+            price: payload.price,
+            purchaseQuantity: payload.purchaseQuantity,
+            marketingExpense: payload.marketingExpense,
+            staffChange: payload.staffChange,
+            demand: result.demand,
+            sales: result.sales,
+            revenue: result.revenue,
+            totalCost: result.totalCost,
+            profit: result.profit,
+            cashAfter: result.cashAfter,
+            stockAfter: result.stockAfter
+        });
+        persistSimulationSession(session);
+        renderSimulationHeader(room, session);
+        renderSimulationHistory(session);
+
+        if (showSuccess) {
+            if (session.gameFinished) {
+                showMessage('Игра завершена: ' + mapFinishReasonRu(session.finishReason), 'warning');
+            } else {
+                showMessage('Ход выполнен успешно', 'success');
+            }
+        }
+        return { ok: true, session: session, result: result, room: room, payload: payload };
+    } catch (e) {
+        return { ok: false, error: 'Ошибка выполнения хода' };
+    }
+}
+
+async function makeSimulationTurn() {
+    if (!checkAuth()) return;
+    var res = await submitSimulationTurn({ showSuccess: true });
+    if (!res.ok) {
+        showMessage(res.error || 'Ошибка', 'danger');
+    }
+    if (simAuto.active && res.ok && !res.session.gameFinished) {
+        simAuto.nextTurnAt = Date.now() + SIM_DAY_MS;
+        simulationAutoTick();
     }
 }
 

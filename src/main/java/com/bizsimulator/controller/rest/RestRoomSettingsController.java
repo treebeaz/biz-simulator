@@ -13,7 +13,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("api/rooms/{roomId}/settings")
 @RequiredArgsConstructor
-public class RoomSettingsController {
+public class RestRoomSettingsController {
     private final RoomSettingsService roomSettingsService;
 
     @GetMapping

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Симуляция</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/profile.css">
+</head>
+<body class="profile-page">
+<nav class="navbar navbar-expand-lg navbar-light bg-light" id="mainNavbar">
+    <div class="container">
+        <a class="navbar-brand" href="/">Бизнес-симулятор</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto" id="navbarMenu"></ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4" id="studentSimulationRoot">
+    <div id="message" class="alert alert-dismissible fade show d-none" role="alert">
+        <span id="messageText"></span>
+        <button type="button" class="btn-close" onclick="hideMessage()"></button>
+    </div>
+
+    <div id="simEmptyState" class="alert alert-warning d-none">
+        Сначала подключитесь к комнате на странице «Моя комната».
+    </div>
+
+    <div id="simMainContent" class="d-none">
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h4 class="mb-1" id="simRoomName">Комната</h4>
+                        <div class="small text-muted" id="simRoomMeta">—</div>
+                    </div>
+                    <a class="btn btn-outline-secondary" href="/pages/student-room.html">Назад</a>
+                </div>
+                <hr>
+                <div class="row g-2 small mb-2">
+                    <div class="col-6 col-md-4 col-lg-2"><strong>Завершено дней:</strong> <span id="simStepValue">0</span> / <span id="simMaxTurnsValue">30</span></div>
+                    <div class="col-6 col-md-4 col-lg-2"><strong>Касса:</strong> <span id="simCashValue">0</span></div>
+                    <div class="col-6 col-md-4 col-lg-2"><strong>Склад, шт.:</strong> <span id="simStockValue">0</span></div>
+                    <div class="col-6 col-md-4 col-lg-2"><strong>Персонал L<sub>t</sub>:</strong> <span id="simStaffValue">0</span></div>
+                    <div class="col-6 col-md-4 col-lg-2"><strong>Себест. c<sub>t</sub>:</strong> <span id="simCostValue">0</span></div>
+                    <div class="col-6 col-md-4 col-lg-2"><strong>Статус:</strong> <span id="simGameStateValue">Идёт</span></div>
+                </div>
+                <div class="border rounded bg-light px-3 py-2 small" id="simStateBeforeTurn">
+                    <div class="fw-semibold mb-1">Состояние на начало следующего дня (важно для решения)</div>
+                    <div class="row g-2">
+                        <div class="col-md-4">Маркетинг <strong>прошлого</strong> дня m<sub>t−1</sub> (входит в спрос): <span id="simLastMarketingDisplay">0</span></div>
+                        <div class="col-md-4">Следующий расчётный день: <strong><span id="simNextDayLabel">1</span></strong></div>
+                        <div class="col-md-4 text-muted" id="simTurnHint">Укажите решение ниже и нажмите «Сделать ход» или запустите автодни.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-light d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h6 class="mb-0">Динамический режим (1 день = 30 сек)</h6>
+                <span class="badge bg-secondary" id="simAutoStatusBadge">Выключено</span>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-2">
+                    Пока режим включён, каждые 30 секунд отправляется ход с числами из формы «Решение на день».
+                    Пауза останавливает таймер; «Закончить» полностью выключает автопрогон.
+                </p>
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                    <button type="button" class="btn btn-success btn-sm" id="simBtnAutoStart" onclick="simulationAutoStart()">
+                        <i class="bi bi-play-fill"></i> Начать
+                    </button>
+                    <button type="button" class="btn btn-warning btn-sm" id="simBtnAutoPause" onclick="simulationAutoPauseResume()" disabled>
+                        <i class="bi bi-pause-fill"></i> Пауза
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="simBtnAutoStop" onclick="simulationAutoStop()" disabled>
+                        <i class="bi bi-stop-fill"></i> Закончить
+                    </button>
+                    <span class="ms-md-2 small fw-semibold" id="simAutoCountdown">—</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-lg-5">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-light"><h6 class="mb-0">Решение на день</h6></div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <label class="form-label" for="simPriceInput">Цена продажи p<sub>t</sub></label>
+                            <input id="simPriceInput" type="number" class="form-control" min="0.01" step="0.01" value="250">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label" for="simPurchaseInput">Закупка на склад q<sub>t</sub> (шт., прибытие к концу дня)</label>
+                            <input id="simPurchaseInput" type="number" class="form-control" min="0" step="1" value="0">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label" for="simMarketingInput">Расходы на маркетинг m<sub>t</sub></label>
+                            <input id="simMarketingInput" type="number" class="form-control" min="0" step="0.01" value="0">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="simStaffChangeInput">Изменение уровня персонала h<sub>t</sub></label>
+                            <input id="simStaffChangeInput" type="number" class="form-control" step="0.01" value="0">
+                        </div>
+                        <button class="btn btn-primary w-100" type="button" id="simBtnManualTurn" onclick="makeSimulationTurn()">
+                            <i class="bi bi-play-circle"></i> Сделать ход вручную
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-light"><h6 class="mb-0">Параметры модели (заданы преподавателем для этой комнаты)</h6></div>
+                    <div class="card-body small p-0" id="simSettingsInfo">
+                        <div class="p-3 text-muted">Загрузка…</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mt-3">
+            <div class="card-header bg-light"><h6 class="mb-0">История ходов</h6></div>
+            <div class="card-body" id="simHistoryWrap">Ходов пока нет.</div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/index.js"></script>
+<script src="/js/profile.js"></script>
+</body>
+</html>
