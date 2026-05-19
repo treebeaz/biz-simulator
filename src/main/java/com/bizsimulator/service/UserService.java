@@ -73,7 +73,6 @@ public class UserService implements UserDetailsService {
     }
 
     public UserResponseDto getUserInfo(Authentication authentication) {
-        // TODO: Добавить больше информации в личный кабинет
         User user = getCurrentAuthenticationUser(authentication);
         UserProfile userProfile = findUserProfileByEmailOrUsername(user);
         return buildResponse(user, userProfile);
@@ -142,4 +141,11 @@ public class UserService implements UserDetailsService {
         return userRepository.findById(id);
     }
 
+    protected User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    log.info("UserService.findByEmail.Error: Email {} doesn't exist", email);
+                    return new UserNotFoundException("User not found");
+                });
+    }
 }

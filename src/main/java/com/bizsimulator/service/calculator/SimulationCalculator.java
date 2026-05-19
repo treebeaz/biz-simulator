@@ -1,8 +1,6 @@
 package com.bizsimulator.service.calculator;
 
-import com.bizsimulator.dto.simulation.FinanceResult;
-import com.bizsimulator.dto.simulation.MakeTurnRequestDto;
-import com.bizsimulator.dto.simulation.SimulationResultDto;
+import com.bizsimulator.dto.simulation.*;
 import com.bizsimulator.entity.room.RoomSettings;
 import com.bizsimulator.entity.simulation.GameState;
 import lombok.RequiredArgsConstructor;
@@ -27,17 +25,46 @@ public class SimulationCalculator {
      * @param gameState
      * @param settings
      * @param makeTurnRequestDto
+     * @param activeEventFactors
      * @return SimulationResult
      */
     public SimulationResultDto calculate(GameState gameState,
                                          RoomSettings settings,
-                                         MakeTurnRequestDto makeTurnRequestDto) {
+                                         MakeTurnRequestDto makeTurnRequestDto,
+                                         ActiveEventFactorsDto activeEventFactors) {
+
+        BigDecimal effectiveStaff = gameState.getStaff().multiply(activeEventFactors.getStaffMultiplier());
+        BigDecimal effectiveCost = gameState.getCurrentCost().multiply(activeEventFactors.getCostMultiplier());
+        BigDecimal effectiveBaseDemand = BigDecimal.valueOf(settings.getBaseDemand())
+                .multiply(activeEventFactors.getDemandMultiplier());
+
+        BigDecimal marketingFactor = BigDecimal.ONE;
+        if(gameState.getLastMarketing().compareTo(BigDecimal.ZERO) > 0) {
+            double ln = Math.log(1 + gameState.getLastMarketing().doubleValue());
+            marketingFactor = BigDecimal.ONE.add(settings.getMarketingEfficiency().multiply(BigDecimal.valueOf(ln)));
+        }
+
+
         int step = gameState.getStep() + 1;
 
-        int demand = demandCalculator.calculate(gameState, settings, makeTurnRequestDto);
+        int demand = demandCalculator.calculateWithFactors(
+                effectiveStaff,
+                effectiveBaseDemand,
+                marketingFactor,
+                makeTurnRequestDto.getPrice(),
+                settings.getAvgPrice(),
+                settings.getElasticity().doubleValue()
+        );
+
         int sales = salesCalculator.calculate(demand, gameState.getStock());
 
-        FinanceResult financeResult = financeCalculator.calculate(gameState, settings, makeTurnRequestDto, sales);
+        FinanceResult financeResult = financeCalculator.calculateWithFactors(
+                effectiveCost,
+                gameState.getStaff(),
+                settings,
+                makeTurnRequestDto,
+                sales
+        );
 
         BigDecimal cashAfter = gameState.getCash()
                 .add(financeResult.getProfit())

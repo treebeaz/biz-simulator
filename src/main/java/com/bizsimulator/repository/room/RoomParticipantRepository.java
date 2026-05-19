@@ -4,6 +4,7 @@ import com.bizsimulator.entity.room.RoomParticipant;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -13,4 +14,6 @@ public interface RoomParticipantRepository extends JpaRepository<RoomParticipant
     boolean existsByRoomIdAndUserId(UUID roomId, UUID userId);
 
     Optional<RoomParticipant> findByRoomIdAndUserId(UUID roomId, UUID userId);
+
+    List<RoomParticipant> findAllByRoomId(UUID roomId);
 }

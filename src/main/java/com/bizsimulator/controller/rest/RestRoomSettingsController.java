@@ -16,16 +16,16 @@ import java.util.UUID;
 public class RestRoomSettingsController {
     private final RoomSettingsService roomSettingsService;
 
+    @PreAuthorize("hasAnyRole('TEACHER','STUDENT')")
     @GetMapping
-//    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<RoomSettingsDto> getSettings(@PathVariable("roomId") UUID roomId) {
         return ResponseEntity.ok(roomSettingsService.getSettingsByRoomId(roomId));
     }
 
-    @PutMapping
     @PreAuthorize("hasRole('TEACHER')")
+    @PutMapping
     public ResponseEntity<RoomSettingsDto> updateSettings(@PathVariable("roomId") UUID roomId,
                                                           @RequestBody UpdateRoomSettingsRequestDto request) {
-        return ResponseEntity.ok(roomSettingsService.updateSettings(roomId, request));
+            return ResponseEntity.ok(roomSettingsService.updateSettings(roomId, request));
     }
 }

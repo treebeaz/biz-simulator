@@ -33,30 +33,34 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String header = request.getHeader("Authorization");
         if (header == null || !header.startsWith("Bearer ")) {
-
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = header.substring(7);
+        String token = header.substring(7).trim();
+        if (token.isEmpty()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         try {
-            String username = jwtUtil.extractUsername(token);
-
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = userService.loadUserByUsername(username);
-
-                if (jwtUtil.validateToken(token)) {
-                    UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+            if (SecurityContextHolder.getContext().getAuthentication() == null
+                && jwtUtil.validateToken(token)) {
+                String username = jwtUtil.extractUsername(token);
+                if (username != null && !username.isBlank()) {
+                    UserDetails userDetails = userService.loadUserByUsername(username);
+                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
                             userDetails.getAuthorities()
                     );
-                    authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(auth);
                 }
             }
         } catch (Exception e) {
-            log.error("JWT Filter error: {}", e.getMessage());
+            SecurityContextHolder.clearContext();
+            log.warn("JWT filter rejected token: {}", e.getMessage());
         }
         filterChain.doFilter(request, response);
     }

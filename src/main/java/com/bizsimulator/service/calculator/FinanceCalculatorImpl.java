@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 @Component
 public class FinanceCalculatorImpl implements FinanceCalculator {
 
+    @Deprecated
     /**
      * Функция подсчета финансовых показателей за 1 период t
      *
@@ -52,5 +53,30 @@ public class FinanceCalculatorImpl implements FinanceCalculator {
                 totalCost,
                 profit
         );
+    }
+
+    public FinanceResult calculateWithFactors(BigDecimal effectiveCost,
+                                              BigDecimal staffForSalary,
+                                              RoomSettings settings,
+                                              MakeTurnRequestDto requestDto,
+                                              int sales) {
+        BigDecimal revenue = requestDto.getPrice().multiply(BigDecimal.valueOf(sales));
+        BigDecimal variableCost = effectiveCost.multiply(BigDecimal.valueOf(sales));
+        BigDecimal purchaseCost = effectiveCost.multiply(BigDecimal.valueOf(requestDto.getPurchaseQuantity()));
+        BigDecimal salaryCost = settings.getSalaryPerStaff().multiply(staffForSalary);
+        BigDecimal totalCost = settings.getFixedCost()
+                .add(variableCost)
+                .add(requestDto.getMarketingExpense())
+                .add(salaryCost);
+        BigDecimal profit  = revenue.subtract(totalCost);
+        return new FinanceResult(
+                revenue,
+                variableCost,
+                purchaseCost,
+                salaryCost,
+                totalCost,
+                profit
+        );
+
     }
 }

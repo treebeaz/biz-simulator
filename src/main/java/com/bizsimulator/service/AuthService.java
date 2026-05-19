@@ -26,7 +26,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponseDto registration(RegistrationRequestDto request) {
-        if(userService.existsUserByUsernameOrEmail(request.getUsername(), request.getEmail())) {
+        if (userService.existsUserByUsernameOrEmail(request.getUsername(), request.getEmail())) {
             log.error("AuthService.registration.failed.UserAlreadyExists");
             throw new UserAlreadyExistsException("User already exists");
         }
@@ -39,25 +39,39 @@ public class AuthService {
         return buildAuthResponse(token, user.getUsername(), user.getRole());
     }
 
-    public AuthResponseDto login(AuthRequestDto request)  {
+    public AuthResponseDto login(AuthRequestDto request) {
         try {
+            User user;
+            String principal;
+
+            if (request.getUsername() != null && !request.getUsername().isBlank()) {
+                user = userService.findByUsername(request.getUsername());
+                principal = user.getUsername();
+            } else if (request.getEmail() != null && !request.getEmail().isBlank()) {
+                user = userService.findByEmail(request.getEmail());
+                principal = user.getUsername(); // authenticate всегда по username
+            } else {
+                throw new InvalidCredentialsException("Username or email is required");
+            }
+
+
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            request.getUsername(),
+                            principal,
                             request.getPassword()
                     )
             );
 
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            User user = userService.findByUsername(userDetails.getUsername());
-            String token = jwtUtil.generateToken(user);
+            User authUser = userService.findByUsername(userDetails.getUsername());
+            String token = jwtUtil.generateToken(authUser);
 
             log.info("AuthService.login.success");
 
-            return buildAuthResponse(token, user.getUsername(), user.getRole());
+            return buildAuthResponse(token, authUser.getUsername(), authUser.getRole());
 
         } catch (BadCredentialsException e) {
-            log.error("AuthService.login.fail.InvalidCredentials");
+            log.error("AuthService.login.Error: Invalid Credentials");
             throw new InvalidCredentialsException("Invalid username or password");
         }
     }

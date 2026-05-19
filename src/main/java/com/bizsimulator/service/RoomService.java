@@ -50,7 +50,6 @@ public class RoomService {
     private final RoomMapper roomMapper;
 
     @Transactional
-    @PreAuthorize("hasRole('TEACHER')")
     public RoomResponseDto createRoom(CreateRoomRequest request,
                                       Authentication authentication) {
         User teacher = userService.getCurrentAuthenticationUser(authentication);
@@ -76,7 +75,6 @@ public class RoomService {
     }
 
     @Transactional
-    @PreAuthorize("hasRole('STUDENT')")
     public RoomResponseDto joinRoomByCode(JoinRoomByCodeRequest request,
                                     Authentication authentication) {
         User student  = userService.getCurrentAuthenticationUser(authentication);
@@ -111,7 +109,6 @@ public class RoomService {
                 .build();
     }
 
-    @PreAuthorize("hasRole('TEACHER')")
     public List<RoomResponseDto> getAllRoomByTeacher(Authentication authentication) {
         User teacher = userService.getCurrentAuthenticationUser(authentication);
         log.info("RoomService.getAllRoomByTeacher.Success: All rooms were successfully found");
@@ -121,7 +118,6 @@ public class RoomService {
                 .collect(Collectors.toList());
     }
 
-    @PreAuthorize("hasRole('TEACHER')")
     private Room getRoomById(UUID roomId, Authentication authentication) {
         User teacher =  userService.getCurrentAuthenticationUser(authentication);
         Room room = roomRepository.findById(roomId)
@@ -139,7 +135,6 @@ public class RoomService {
     }
 
     @Transactional
-    @PreAuthorize("hasRole('TEACHER')")
     public void deleteRoom(UUID roomId, Authentication authentication) {
         Room room = getRoomById(roomId, authentication);
         roomRepository.delete(room);

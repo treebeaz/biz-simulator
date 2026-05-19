@@ -5,6 +5,7 @@ import com.bizsimulator.entity.room.RoomSettings;
 import com.bizsimulator.entity.simulation.GameState;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.security.SecureRandom;
 
 /**
@@ -42,10 +43,27 @@ public class DemandCalculatorImpl implements DemandCalculator {
         double noise = NOISE_MIN + (NOISE_MAX - NOISE_MIN) * random.nextDouble();
 
         double demand = settings.getBaseDemand() *
-                           fPrice *
-                           fMarketing *
-                           gameState.getStaff().doubleValue() *
-                           noise;
+                        fPrice *
+                        fMarketing *
+                        gameState.getStaff().doubleValue() *
+                        noise;
+
+        return Math.max(0, (int) Math.round(demand));
+    }
+
+    public int calculateWithFactors(BigDecimal effectiveStaff,
+                                    BigDecimal effectiveBaseDemand,
+                                    BigDecimal marketingFactor,
+                                    BigDecimal price,
+                                    BigDecimal avgPrice,
+                                    double elasticity) {
+        double fPrice = Math.pow(price.doubleValue() / avgPrice.doubleValue(), -elasticity);
+        double noise = NOISE_MIN + (NOISE_MAX - NOISE_MIN) * random.nextDouble();
+        double demand = effectiveBaseDemand.doubleValue()
+                * fPrice
+                * marketingFactor.doubleValue()
+                * effectiveStaff.doubleValue()
+                *noise;
 
         return Math.max(0, (int) Math.round(demand));
     }

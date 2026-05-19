@@ -19,6 +19,7 @@ public class TurnResultDto {
     BigDecimal cashAfter;
     Integer stockAfter;
     BigDecimal cashChange;  // изменение денег за 1 ход
+    TriggeredEventDto triggeredEventDto;
 }
 
 
